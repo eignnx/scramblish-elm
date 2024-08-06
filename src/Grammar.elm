@@ -1,7 +1,7 @@
 module Grammar exposing (..)
 
-import Html exposing (Html, a, dd, div, dl, dt, h2, span, text)
-import Html.Attributes exposing (class, href, id)
+import Html exposing (Html, a, dd, details, div, dl, dt, h2, span, summary, text)
+import Html.Attributes exposing (attribute, class, href, id)
 import Random
 import Set
 import Utils
@@ -124,8 +124,8 @@ generateSyntaxTree grammar start =
 
 renderGrammar : Grammar -> Html msg
 renderGrammar { title, rules } =
-    div []
-        [ h2 [ class "grammar-title" ] [ text title ]
+    details [ attribute "open" "true" ]
+        [ summary [ class "grammar-title" ] [ text title ]
         , dl [ class "grammar-rules" ] (groupByNt rules |> List.map (renderRule title))
         ]
 

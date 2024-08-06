@@ -14,7 +14,44 @@
 
 #app-content {
     display: grid;
-    grid-template-columns: 1fr 80% 1fr;
+    grid-template-columns: 1fr minmax(auto, 1000px) 1fr;
+}
+
+.grammar-rules {
+    column-count: 3;
+}
+
+@media (max-width: 1000px) {
+    /* body {
+        background-color: red;
+    } */
+
+    #app-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 1200px) {
+    /* body {
+        background-color: green;
+    } */
+
+    .grammar-rules {
+        column-count: 2;
+    }
+}
+
+@media (max-width: 1000px) {
+
+    span,
+    button,
+    div {
+        font-size: 20pt;
+    }
+
+    .grammar-rules {
+        column-count: 1;
+    }
 }
 
 header {
@@ -58,12 +95,21 @@ button:hover {
     color: black;
 }
 
-.grammar-title {
-    border-block-end: 2px solid goldenrod;
+details {
+    margin-block-start: 1rem;
+    border-inline-start: 2px solid goldenrod;
+    padding-inline-start: 1rem;
 }
 
-.grammar-rules {
-    column-count: 2;
+.grammar-title {
+    cursor: pointer;
+    padding-block: 0.5rem;
+    font-size: larger;
+    font-weight: bold;
+}
+
+.grammar-title:hover {
+    text-decoration: underline;
 }
 
 .grammar-rule {
@@ -76,9 +122,15 @@ dt {
 }
 
 dd {
-    margin-inline-start: 1rem;
+    margin-inline-start: 0.5rem;
     padding-inline-start: 0.5rem;
-    border-inline-start: 2px solid goldenrod;
+    text-wrap: nowrap;
+}
+
+dd::before {
+    content: "|";
+    padding-inline-end: 0.5rem;
+    color: goldenrod;
 }
 
 a.nonterminal {
@@ -113,7 +165,7 @@ a.nonterminal:hover {
         background-color: transparent;
     }
 
-    80% {
+    50% {
         background-color: rgba(255, 255, 0, 0.463);
     }
 
@@ -124,18 +176,19 @@ a.nonterminal:hover {
 
 :target {
     border-radius: 3px;
-    animation: flash-yellow 800ms;
+    animation: flash-yellow 500ms;
 }
 
 .grammar-container {
     margin-block: 2rem;
     padding-block-end: 1rem;
-    border-block-end: 2px solid goldenrod;
+    /* border-block-end: 2px solid goldenrod; */
 }
 
 .sentence {
     font-size: larger;
     font-family: 'Courier New', Courier, monospace;
+    text-wrap: wrap;
 }
 
 .sentence::after {

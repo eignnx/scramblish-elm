@@ -44,7 +44,9 @@ init _ =
             , ruleMuts = []
             }
       }
-    , Random.generate MutationCreated <| Mutation.grammarMutGenerator "Scramblish" en
+    , Cmd.batch
+        [ Random.generate MutationCreated <| Mutation.grammarMutGenerator "Scramblish" en
+        ]
     )
 
 
