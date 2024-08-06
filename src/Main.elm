@@ -30,20 +30,22 @@ main =
 
 
 type alias Model =
-    { examples : List SyntaxTree
-    , scramblishGrammar : Maybe Grammar.Grammar
+    { examples : List (Translation SyntaxTree)
+    , scramblishGrammar : Grammar.Grammar
     }
 
 
 init : a -> ( Model, Cmd Msg )
 init _ =
     ( { examples = []
-      , scramblishGrammar = Nothing
+      , scramblishGrammar = { en | title = "Scramblish" }
       }
-    , Cmd.batch
-        [ randomSentence en "Sentence"
-        , generateScramblishGrammar
-        ]
+    , Cmd.none
+      -- , Mutation.grammarMutGenerator "Scramblish" en
+      --     |> Random.andThen (\scrGrammar ->
+      --             randomSentences { eng = en, scr = scrGrammar } "Sentence"
+      --         )
+      --     |> Random.generate MutationCreated
     )
 
 
@@ -62,7 +64,7 @@ subscriptions _ =
 
 type Msg
     = AddExample
-    | GeneratedExample SyntaxTree
+    | GeneratedExample (Translation SyntaxTree)
     | MutateEnGrammar
     | MutationCreated Mutation.GrammarMut
 
@@ -71,7 +73,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         AddExample ->
-            ( model, randomSentence en "Sentence" )
+            ( model, randomSentences { eng = en, scr = model.scramblishGrammar } "Sentence" )
 
         GeneratedExample syntaxTree ->
             ( { model | examples = syntaxTree :: model.examples }, Cmd.none )
@@ -80,12 +82,18 @@ update msg model =
             ( model, generateScramblishGrammar )
 
         MutationCreated grammarMut ->
-            ( { model | scramblishGrammar = Just (Mutation.applyGrammarMut grammarMut) }, Cmd.none )
+            ( { model | scramblishGrammar = Mutation.applyGrammarMut grammarMut }, Cmd.none )
 
 
-randomSentence : Grammar -> String -> Cmd Msg
-randomSentence grammar start =
-    Random.generate GeneratedExample (generateSyntaxTree grammar (Nt start))
+randomSentences : Translation Grammar -> String -> Cmd Msg
+randomSentences grammars start =
+    Random.generate GeneratedExample
+        (Random.pair
+            (generateSyntaxTree grammars.eng (Nt start))
+            (generateSyntaxTree grammars.scr (Nt start))
+            |> Random.map
+                (\( eng, scr ) -> { eng = eng, scr = scr })
+        )
 
 
 generateScramblishGrammar =
@@ -106,7 +114,7 @@ view model =
         , main_ []
             [ section [ class "container" ]
                 ((model.examples
-                    |> List.map syntaxTreeView
+                    |> List.map exampleView
                     |> List.indexedMap sentenceExampleView
                  )
                     ++ [ button [ onClick AddExample ] [ text "+ Additional Example" ] ]
@@ -115,12 +123,7 @@ view model =
                 [ renderGrammar en ]
             , section [ class "container", class "grammar-container" ]
                 [ button [ onClick MutateEnGrammar ] [ text "⟳ Regenerate Grammar Mutation" ]
-                , case model.scramblishGrammar of
-                    Just grammar ->
-                        renderGrammar grammar
-
-                    Nothing ->
-                        div [] [ text "No mutated grammar generated yet." ]
+                , renderGrammar model.scramblishGrammar
                 ]
             ]
         , footer []

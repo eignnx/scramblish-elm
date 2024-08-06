@@ -30,6 +30,10 @@ type Tm
     = Tm String
 
 
+type alias Translation a =
+    { eng : a, scr : a }
+
+
 
 -- GENERATE SENTENCES
 
@@ -106,36 +110,36 @@ renderGrammar : Grammar -> Html msg
 renderGrammar { title, rules } =
     div []
         [ h2 [ class "grammar-title" ] [ text title ]
-        , dl [ class "grammar-rules" ] (groupByNt rules |> List.map renderRule)
+        , dl [ class "grammar-rules" ] (groupByNt rules |> List.map (renderRule title))
         ]
 
 
-renderRule : ( Nt, List SententialForm ) -> Html msg
-renderRule ( Nt name, sententialForms ) =
+renderRule : String -> ( Nt, List SententialForm ) -> Html msg
+renderRule title ( Nt name, sententialForms ) =
     div [ class "grammar-rule" ]
-        (dt [ id ("h-" ++ name) ] [ text name ]
-            :: List.map renderSententialForm sententialForms
+        (dt [ id ("h-" ++ title ++ "-" ++ name) ] [ text name ]
+            :: List.map (renderSententialForm title) sententialForms
         )
 
 
-renderSententialForm : SententialForm -> Html msg
-renderSententialForm sententialForm =
-    dd [] (List.map renderForm sententialForm)
+renderSententialForm : String -> SententialForm -> Html msg
+renderSententialForm title sententialForm =
+    dd [] (List.map (renderForm title) sententialForm)
 
 
-renderForm : Form -> Html msg
-renderForm form =
+renderForm : String -> Form -> Html msg
+renderForm title form =
     case form of
         NtForm nt ->
-            renderNt nt
+            renderNt title nt
 
         TmForm tm ->
             renderTm tm
 
 
-renderNt : Nt -> Html msg
-renderNt (Nt name) =
-    a [ class "nonterminal", href ("#h-" ++ name) ] [ text name ]
+renderNt : String -> Nt -> Html msg
+renderNt title (Nt name) =
+    a [ class "nonterminal", href ("#h-" ++ title ++ "-" ++ name) ] [ text name ]
 
 
 renderTm : Tm -> Html msg
@@ -143,12 +147,20 @@ renderTm (Tm tm) =
     span [ class "terminal" ] [ text tm ]
 
 
+exampleView : Translation SyntaxTree -> Html msg
+exampleView { eng, scr } =
+    div [ class "translation", class "example" ]
+        [ syntaxTreeView scr
+        , syntaxTreeView eng
+        ]
+
+
 syntaxTreeView : SyntaxTree -> Html msg
 syntaxTreeView tree =
     syntaxTreeToWordList tree
         |> List.map (\word -> span [ class "word" ] [ text word ])
         |> List.intersperse (span [ class "whitespace" ] [ text " " ])
-        |> span [ class "sentence" ]
+        |> div [ class "sentence" ]
 
 
 syntaxTreeToWordList : SyntaxTree -> List String
