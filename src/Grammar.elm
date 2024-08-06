@@ -4,6 +4,7 @@ import Html exposing (Html, a, dd, div, dl, dt, h2, span, text)
 import Html.Attributes exposing (class, href, id)
 import Random
 import Set
+import Utils
 
 
 type alias Grammar =
@@ -31,10 +32,6 @@ type Tm
 
 
 -- GENERATE SENTENCES
-
-
-type alias Seed =
-    Int
 
 
 type SyntaxTree
@@ -95,20 +92,10 @@ generateSyntaxTree grammar start =
 
         makeSyntaxTree : SententialForm -> Random.Generator SyntaxTree
         makeSyntaxTree sententialForm =
-            Random.map (Node start) (randomFlattenList mapForm sententialForm)
+            Random.map (Node start) (Utils.randomFlattenList mapForm sententialForm)
     in
     chooseSententialform
         |> Random.andThen makeSyntaxTree
-
-
-randomFlattenList : (a -> Random.Generator b) -> List a -> Random.Generator (List b)
-randomFlattenList fn list =
-    case list of
-        [] ->
-            Random.constant []
-
-        x :: xs ->
-            Random.map2 (::) (fn x) (randomFlattenList fn xs)
 
 
 

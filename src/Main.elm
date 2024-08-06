@@ -3,9 +3,11 @@ module Main exposing (..)
 import Browser
 import EnGrammar exposing (..)
 import Grammar exposing (..)
-import Html exposing (Html, button, div, footer, h1, h3, header, main_, section, span, text)
+import Html exposing (Html, button, div, footer, h1, h3, header, main_, section, text)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
+import Mutation
+import Platform.Cmd as Cmd
 import Random
 
 
@@ -29,14 +31,19 @@ main =
 
 type alias Model =
     { examples : List SyntaxTree
+    , scramblishGrammar : Maybe Grammar.Grammar
     }
 
 
 init : a -> ( Model, Cmd Msg )
 init _ =
     ( { examples = []
+      , scramblishGrammar = Nothing
       }
-    , randomSentence en "Sentence"
+    , Cmd.batch
+        [ randomSentence en "Sentence"
+        , generateScramblishGrammar
+        ]
     )
 
 
@@ -55,7 +62,9 @@ subscriptions _ =
 
 type Msg
     = AddExample
-    | Generated SyntaxTree
+    | GeneratedExample SyntaxTree
+    | MutateEnGrammar
+    | MutationCreated Mutation.GrammarMut
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -64,13 +73,23 @@ update msg model =
         AddExample ->
             ( model, randomSentence en "Sentence" )
 
-        Generated syntaxTree ->
+        GeneratedExample syntaxTree ->
             ( { model | examples = syntaxTree :: model.examples }, Cmd.none )
+
+        MutateEnGrammar ->
+            ( model, generateScramblishGrammar )
+
+        MutationCreated grammarMut ->
+            ( { model | scramblishGrammar = Just (Mutation.applyGrammarMut grammarMut) }, Cmd.none )
 
 
 randomSentence : Grammar -> String -> Cmd Msg
 randomSentence grammar start =
-    Random.generate Generated (generateSyntaxTree grammar (Nt start))
+    Random.generate GeneratedExample (generateSyntaxTree grammar (Nt start))
+
+
+generateScramblishGrammar =
+    Random.generate MutationCreated (Mutation.grammarMutGenerator "Scramblish" en)
 
 
 
@@ -94,6 +113,15 @@ view model =
                 )
             , section [ class "container", class "grammar-container" ]
                 [ renderGrammar en ]
+            , section [ class "container", class "grammar-container" ]
+                [ button [ onClick MutateEnGrammar ] [ text "⟳ Regenerate Grammar Mutation" ]
+                , case model.scramblishGrammar of
+                    Just grammar ->
+                        renderGrammar grammar
+
+                    Nothing ->
+                        div [] [ text "No mutated grammar generated yet." ]
+                ]
             ]
         , footer []
             [ text "© 2024" ]

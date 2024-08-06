@@ -44,12 +44,18 @@ button {
     padding-inline: 0.75rem;
     border-radius: 5px;
     font-weight: bold;
+
+    background-color: rgba(28, 28, 71, 0.8);
+    color: white;
+
+    transition:
+        background-color ease 100ms,
+        color ease 100ms;
 }
 
 button:hover {
-    background-color: rgba(28, 28, 71, 0.8);
-    transition: ease 100ms;
-    color: white;
+    background-color: white;
+    color: black;
 }
 
 .grammar-title {
