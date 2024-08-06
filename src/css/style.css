@@ -49,8 +49,8 @@ button {
     color: white;
 
     transition:
-        background-color ease 100ms,
-        color ease 100ms;
+        background-color ease-out 200ms,
+        color ease-out 200ms;
 }
 
 button:hover {
