@@ -3,7 +3,7 @@ module Main exposing (..)
 import Browser
 import EnGrammar exposing (..)
 import Grammar exposing (..)
-import Html exposing (Html, button, div, footer, h1, header, main_, section, span, text)
+import Html exposing (Html, button, div, footer, h1, h3, header, main_, section, span, text)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
 import Random
@@ -28,13 +28,13 @@ main =
 
 
 type alias Model =
-    { sentence : Maybe SyntaxTree
+    { examples : List SyntaxTree
     }
 
 
 init : a -> ( Model, Cmd Msg )
 init _ =
-    ( { sentence = Nothing
+    ( { examples = []
       }
     , randomSentence en "Sentence"
     )
@@ -54,18 +54,18 @@ subscriptions _ =
 
 
 type Msg
-    = Regenerate
+    = AddExample
     | Generated SyntaxTree
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Regenerate ->
+        AddExample ->
             ( model, randomSentence en "Sentence" )
 
         Generated syntaxTree ->
-            ( { sentence = Just syntaxTree }, Cmd.none )
+            ( { model | examples = syntaxTree :: model.examples }, Cmd.none )
 
 
 randomSentence : Grammar -> String -> Cmd Msg
@@ -86,9 +86,12 @@ view model =
             ]
         , main_ []
             [ section [ class "container" ]
-                [ button [ onClick Regenerate ] [ text "Generate Sentence" ]
-                , div [ style "padding-block" "1rem" ] [ maybeSyntaxTree model.sentence ]
-                ]
+                ((model.examples
+                    |> List.map syntaxTreeView
+                    |> List.indexedMap sentenceExampleView
+                 )
+                    ++ [ button [ onClick AddExample ] [ text "+ Additional Example" ] ]
+                )
             , section [ class "container", class "grammar-container" ]
                 [ renderGrammar en ]
             ]
@@ -97,11 +100,9 @@ view model =
         ]
 
 
-maybeSyntaxTree : Maybe SyntaxTree -> Html Msg
-maybeSyntaxTree x =
-    case x of
-        Nothing ->
-            span [] [ text "<Press the button to generate a sentence>" ]
-
-        Just tree ->
-            syntaxTreeView tree
+sentenceExampleView : Int -> Html msg -> Html msg
+sentenceExampleView index sentence =
+    div [ style "padding-block" "1rem" ]
+        [ h3 [] [ text ("Example " ++ String.fromInt (index + 1)) ]
+        , sentence
+        ]
