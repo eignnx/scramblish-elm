@@ -75,7 +75,7 @@ update msg model =
             ( model, randomSentences en model.scramblishGrammar "Sentence" )
 
         GeneratedExample syntaxTree ->
-            ( { model | examples = syntaxTree :: model.examples }, Cmd.none )
+            ( { model | examples = model.examples ++ [ syntaxTree ] }, Cmd.none )
 
         MutateEnGrammar ->
             ( model, generateScramblishGrammar )
@@ -113,7 +113,6 @@ view model =
         , main_ []
             [ section [ class "container" ]
                 ((model.examples
-                    |> List.map exampleView
                     |> List.indexedMap sentenceExampleView
                  )
                     ++ [ button [ onClick AddExample ] [ text "+ Additional Example" ] ]
@@ -131,9 +130,18 @@ view model =
         ]
 
 
-sentenceExampleView : Int -> Html msg -> Html msg
-sentenceExampleView index sentence =
-    div [ style "padding-block" "1rem" ]
+sentenceExampleView : Int -> Translation SyntaxTree -> Html msg
+sentenceExampleView index { eng, scr } =
+    div [ style "padding-block" "1rem", class "example" ]
         [ h3 [] [ text ("Example " ++ String.fromInt (index + 1)) ]
-        , sentence
+        , div [ class "translation" ]
+            [ div []
+                [ text "Scramblish:"
+                , syntaxTreeView scr
+                ]
+            , div []
+                [ text "English:"
+                , syntaxTreeView eng
+                ]
+            ]
         ]

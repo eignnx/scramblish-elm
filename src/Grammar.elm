@@ -163,20 +163,12 @@ renderTm (Tm tm) =
     span [ class "terminal" ] [ text tm ]
 
 
-exampleView : Translation SyntaxTree -> Html msg
-exampleView { eng, scr } =
-    div [ class "translation", class "example" ]
-        [ syntaxTreeView scr
-        , syntaxTreeView eng
-        ]
-
-
 syntaxTreeView : SyntaxTree -> Html msg
 syntaxTreeView tree =
     syntaxTreeToWordList tree
         |> List.map (\word -> span [ class "word" ] [ text word ])
         |> List.intersperse (span [ class "whitespace" ] [ text " " ])
-        |> div [ class "sentence" ]
+        |> span [ class "sentence" ]
 
 
 syntaxTreeToWordList : SyntaxTree -> List String

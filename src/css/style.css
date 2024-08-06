@@ -153,3 +153,22 @@ a.nonterminal:hover {
         3px 3px 1px black;
     transition: text-shadow 100ms;
 }
+
+.example {
+    display: flex;
+}
+
+.example h3 {
+    margin-inline-end: 1rem;
+    padding-inline-end: 1rem;
+    border-inline-end: 2px solid goldenrod;
+}
+
+.example .translation>* {
+    display: flex;
+    justify-content: space-between;
+}
+
+.sentence {
+    padding-inline-start: 1rem;
+}
