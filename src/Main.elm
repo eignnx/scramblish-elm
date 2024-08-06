@@ -6,7 +6,7 @@ import Grammar exposing (..)
 import Html exposing (Html, button, div, footer, h1, h3, header, main_, section, text)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
-import Mutation
+import Mutation exposing (GrammarMut, applyGrammarMut)
 import Platform.Cmd as Cmd
 import Random
 
@@ -31,21 +31,20 @@ main =
 
 type alias Model =
     { examples : List (Translation SyntaxTree)
-    , scramblishGrammar : Grammar.Grammar
+    , scramblishGrammar : GrammarMut
     }
 
 
 init : a -> ( Model, Cmd Msg )
 init _ =
     ( { examples = []
-      , scramblishGrammar = { en | title = "Scramblish" }
+      , scramblishGrammar =
+            { oldGrammar = en
+            , newTitle = "Scramblish"
+            , ruleMuts = []
+            }
       }
-    , Cmd.none
-      -- , Mutation.grammarMutGenerator "Scramblish" en
-      --     |> Random.andThen (\scrGrammar ->
-      --             randomSentences { eng = en, scr = scrGrammar } "Sentence"
-      --         )
-      --     |> Random.generate MutationCreated
+    , Random.generate MutationCreated <| Mutation.grammarMutGenerator "Scramblish" en
     )
 
 
@@ -73,7 +72,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         AddExample ->
-            ( model, randomSentences { eng = en, scr = model.scramblishGrammar } "Sentence" )
+            ( model, randomSentences en model.scramblishGrammar "Sentence" )
 
         GeneratedExample syntaxTree ->
             ( { model | examples = syntaxTree :: model.examples }, Cmd.none )
@@ -82,20 +81,20 @@ update msg model =
             ( model, generateScramblishGrammar )
 
         MutationCreated grammarMut ->
-            ( { model | scramblishGrammar = Mutation.applyGrammarMut grammarMut }, Cmd.none )
+            ( { model | scramblishGrammar = grammarMut }, Cmd.none )
 
 
-randomSentences : Translation Grammar -> String -> Cmd Msg
-randomSentences grammars start =
+randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg
+randomSentences eng engMut start =
     Random.generate GeneratedExample
-        (Random.pair
-            (generateSyntaxTree grammars.eng (Nt start))
-            (generateSyntaxTree grammars.scr (Nt start))
+        (generateSyntaxTree eng (Nt start)
+            |> Random.map (\engTree -> ( engTree, Mutation.mutateSyntaxTree engMut engTree ))
             |> Random.map
-                (\( eng, scr ) -> { eng = eng, scr = scr })
+                (\( engTree, scrTree ) -> { eng = engTree, scr = scrTree })
         )
 
 
+generateScramblishGrammar : Cmd Msg
 generateScramblishGrammar =
     Random.generate MutationCreated (Mutation.grammarMutGenerator "Scramblish" en)
 
@@ -123,7 +122,8 @@ view model =
                 [ renderGrammar en ]
             , section [ class "container", class "grammar-container" ]
                 [ button [ onClick MutateEnGrammar ] [ text "⟳ Regenerate Grammar Mutation" ]
-                , renderGrammar model.scramblishGrammar
+                , renderGrammar <|
+                    Mutation.applyGrammarMut model.scramblishGrammar
                 ]
             ]
         , footer []

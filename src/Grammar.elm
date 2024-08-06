@@ -13,6 +13,8 @@ type alias Grammar =
     }
 
 
+{-| A non-terminal symbol.
+-}
 type Nt
     = Nt String
 
@@ -26,6 +28,8 @@ type Form
     | TmForm Tm
 
 
+{-| A terminal symbol.
+-}
 type Tm
     = Tm String
 
@@ -47,7 +51,7 @@ type SyntaxTree
         }
 
 
-lookupNt : List ( Nt, SententialForm ) -> Nt -> List SententialForm
+lookupNt : List ( Nt, a ) -> Nt -> List a
 lookupNt rules tgtNt =
     let
         findRule ( nt, rhss ) =

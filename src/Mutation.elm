@@ -1,6 +1,6 @@
 module Mutation exposing (..)
 
-import Grammar exposing (Grammar, Nt, SententialForm)
+import Grammar exposing (Grammar, Nt, SententialForm, SyntaxTree(..), Tm(..), lookupNt)
 import List.Extra
 import Random
 import Utils
@@ -67,3 +67,54 @@ applyGrammarMut { oldGrammar, newTitle, ruleMuts } =
             |> List.map
                 (\( ( nt, _ ), ruleMut ) -> ( nt, applyRuleMut ruleMut ))
     }
+
+
+mutateSyntaxTree : GrammarMut -> SyntaxTree -> SyntaxTree
+mutateSyntaxTree grammarMut oldTree =
+    case oldTree of
+        Leaf (Tm oldTm) ->
+            Leaf (Tm oldTm)
+
+        Node { nt, branchIndex, children } ->
+            let
+                ruleMuts : List RuleMut
+                ruleMuts =
+                    grammarMut.ruleMuts
+                        |> List.map (\m -> ( m.lhs, m ))
+                        |> (\ms -> lookupNt ms nt)
+
+                ruleMut : RuleMut
+                ruleMut =
+                    ruleMuts
+                        |> List.Extra.getAt branchIndex
+                        |> Utils.expect
+                            (\() ->
+                                "Branch index `"
+                                    ++ String.fromInt branchIndex
+                                    ++ "` is in bounds of rule mutation list: "
+                                    ++ Debug.toString ruleMuts
+                            )
+
+                newChildrenUnpermuted : List SyntaxTree
+                newChildrenUnpermuted =
+                    children
+                        |> List.map (mutateSyntaxTree grammarMut)
+
+                getPermutationIndex : Int -> SyntaxTree
+                getPermutationIndex index =
+                    List.Extra.getAt index newChildrenUnpermuted
+                        |> Utils.expect
+                            (\() ->
+                                "Permutation indices `"
+                                    ++ Debug.toString ruleMut.clausePermutation
+                                    ++ "` are all valid indicies of list `"
+                                    ++ Debug.toString newChildrenUnpermuted
+                                    ++ "`"
+                            )
+
+                newChildren : List SyntaxTree
+                newChildren =
+                    ruleMut.clausePermutation
+                        |> List.map getPermutationIndex
+            in
+            Node { nt = nt, branchIndex = branchIndex, children = newChildren }
