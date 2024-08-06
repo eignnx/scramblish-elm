@@ -40,7 +40,10 @@ type alias Translation a =
 
 type SyntaxTree
     = Leaf Tm
-    | Node Nt (List SyntaxTree)
+    | Node
+        { nt : Nt
+        , children : List SyntaxTree
+        }
 
 
 lookupNt : List ( Nt, SententialForm ) -> Nt -> List SententialForm
@@ -96,7 +99,9 @@ generateSyntaxTree grammar start =
 
         makeSyntaxTree : SententialForm -> Random.Generator SyntaxTree
         makeSyntaxTree sententialForm =
-            Random.map (Node start) (Utils.randomFlattenList mapForm sententialForm)
+            Random.map
+                (\children -> Node { nt = start, children = children })
+                (Utils.randomFlattenList mapForm sententialForm)
     in
     chooseSententialform
         |> Random.andThen makeSyntaxTree
@@ -169,7 +174,7 @@ syntaxTreeToWordList tree =
         Leaf (Tm word) ->
             [ word ]
 
-        Node _ subtrees ->
-            subtrees
+        Node { children } ->
+            children
                 |> List.map syntaxTreeToWordList
                 |> List.concat
