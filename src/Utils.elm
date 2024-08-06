@@ -29,14 +29,6 @@ shuffled list =
                 chooseIndex =
                     Random.uniform 0 (List.range 1 (len - 1))
 
-                indicies : List Int
-                indicies =
-                    List.range 0 (len - 1)
-
-                zipped : List ( Int, a )
-                zipped =
-                    List.Extra.zip indicies list
-
                 removeChosen : Random.Generator ( a, List a )
                 removeChosen =
                     chooseIndex
