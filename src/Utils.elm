@@ -62,3 +62,10 @@ randomFlattenList fn list =
 
         x :: xs ->
             Random.map2 (::) (fn x) (randomFlattenList fn xs)
+
+
+indexed : List a -> List ( Int, a )
+indexed xs =
+    List.Extra.zip
+        (List.range 0 (List.length xs - 1))
+        xs

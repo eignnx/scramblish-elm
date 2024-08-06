@@ -42,6 +42,7 @@ type SyntaxTree
     = Leaf Tm
     | Node
         { nt : Nt
+        , branchIndex : Int
         , children : List SyntaxTree
         }
 
@@ -75,15 +76,15 @@ groupByNt rules =
 generateSyntaxTree : Grammar -> Nt -> Random.Generator SyntaxTree
 generateSyntaxTree grammar start =
     let
-        rules : List SententialForm
-        rules =
+        clauses : List SententialForm
+        clauses =
             lookupNt grammar.rules start
 
-        chooseSententialform : Random.Generator SententialForm
+        chooseSententialform : Random.Generator ( Int, SententialForm )
         chooseSententialform =
-            case rules of
+            case Utils.indexed clauses of
                 [] ->
-                    Random.constant [ TmForm (Tm ("<" ++ Debug.toString start ++ ">")) ]
+                    Random.constant ( 0, [ TmForm (Tm ("<" ++ Debug.toString start ++ ">")) ] )
 
                 x :: xs ->
                     Random.uniform x xs
@@ -97,11 +98,17 @@ generateSyntaxTree grammar start =
                 TmForm tm ->
                     Random.map Leaf (Random.constant tm)
 
-        makeSyntaxTree : SententialForm -> Random.Generator SyntaxTree
-        makeSyntaxTree sententialForm =
-            Random.map
-                (\children -> Node { nt = start, children = children })
-                (Utils.randomFlattenList mapForm sententialForm)
+        makeSyntaxTree : ( Int, SententialForm ) -> Random.Generator SyntaxTree
+        makeSyntaxTree ( branchIndex, sententialForm ) =
+            Utils.randomFlattenList mapForm sententialForm
+                |> Random.map
+                    (\children ->
+                        Node
+                            { nt = start
+                            , branchIndex = branchIndex
+                            , children = children
+                            }
+                    )
     in
     chooseSententialform
         |> Random.andThen makeSyntaxTree
