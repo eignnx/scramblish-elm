@@ -1,0 +1,149 @@
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    color: white;
+    background-color: rgb(32, 32, 59);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#app-content {
+    display: grid;
+    grid-template-columns: 1fr 80% 1fr;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-block-start: 1rem;
+    width: 100%;
+    grid-column: 2/3;
+}
+
+main {
+    margin-block-start: 1rem;
+    grid-column: 2/3;
+}
+
+footer {
+    margin-block-start: 1rem;
+    border-block-start: 2px solid goldenrod;
+    padding-block: 1rem;
+    text-align: center;
+    grid-column: 2/3;
+}
+
+button {
+    padding-block: 0.25rem;
+    padding-inline: 0.75rem;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+button:hover {
+    background-color: rgba(28, 28, 71, 0.8);
+    transition: ease 100ms;
+    color: white;
+}
+
+.grammar-title {
+    border-block-end: 2px solid goldenrod;
+}
+
+.grammar-rules {
+    column-count: 2;
+}
+
+.grammar-rule {
+    break-inside: avoid-column;
+}
+
+dt {
+    font-weight: bold;
+    padding-block-start: 1rem;
+}
+
+dd {
+    margin-inline-start: 1rem;
+    padding-inline-start: 0.5rem;
+    border-inline-start: 2px solid goldenrod;
+}
+
+a.nonterminal {
+    color: white;
+    margin-inline-end: 0.8em;
+}
+
+
+span.terminal {
+    font-family: 'Courier New', Courier, monospace;
+    padding-inline: 0.25rem;
+    border-radius: 5px;
+}
+
+span.terminal::before {
+    content: '"';
+}
+
+span.terminal::after {
+    content: '"';
+}
+
+a.nonterminal:hover {
+    background-color: rgba(57, 57, 120, 0.8);
+    border-radius: 3px;
+    transition: ease 150ms;
+    color: white;
+}
+
+@keyframes flash-yellow {
+    0% {
+        background-color: transparent;
+    }
+
+    80% {
+        background-color: rgba(255, 255, 0, 0.463);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+:target {
+    border-radius: 3px;
+    animation: flash-yellow 800ms;
+}
+
+.grammar-container {
+    margin-block: 2rem;
+    padding-block-end: 1rem;
+    border-block-end: 2px solid goldenrod;
+}
+
+.sentence {
+    font-size: larger;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.sentence::after {
+    content: "."
+}
+
+.sentence :first-child {
+    text-transform: capitalize;
+}
+
+.word:hover {
+    cursor: pointer;
+    text-shadow:
+        1px 1px 10px white,
+        3px 3px 1px black;
+    transition: text-shadow 100ms;
+}
