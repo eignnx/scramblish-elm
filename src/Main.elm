@@ -7,7 +7,7 @@ import Grammar exposing (..)
 import Html exposing (Html, button, div, footer, h1, h3, header, main_, section, text)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
-import Mutation exposing (GrammarMut, applyGrammarMut, mutateSyntaxTree)
+import Mutation exposing (GrammarMut, mutateSyntaxTree)
 import Platform.Cmd as Cmd
 import Random
 

@@ -1,6 +1,5 @@
 module Orthography exposing (..)
 
-import Html.Attributes exposing (alt)
 import Random
 import Utils
 
