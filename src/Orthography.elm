@@ -29,8 +29,8 @@ type ConsonantVowelOrthoraphy
         }
 
 
-orthoFromCvOrtho : ConsonantVowelOrthoraphy -> Orthography -> Orthography
-orthoFromCvOrtho (CvOrtho cvOrtho) (Ortho baseOrtho) =
+wordGeneratorFromCvOrtho : ConsonantVowelOrthoraphy -> (String -> Random.Generator String)
+wordGeneratorFromCvOrtho (CvOrtho cvOrtho) =
     let
         wordGenerator : String -> Random.Generator String
         wordGenerator word =
@@ -73,61 +73,57 @@ orthoFromCvOrtho (CvOrtho cvOrtho) (Ortho baseOrtho) =
             loop cvOrtho.maxSegments ""
                 |> Random.andThen (possiblyAppend 0.333 someC)
     in
-    Ortho { baseOrtho | wordGenerator = wordGenerator }
+    wordGenerator
 
 
 romanOrthography : Orthography
 romanOrthography =
-    orthoFromCvOrtho
-        (let
-            consonants =
-                String.toList "BCDFGHLMNPQRSTVXZ" |> List.map String.fromChar
+    Ortho
+        { title = "Roman Letters"
+        , note = "The Roman alphabet. Easiest for new players who speak English."
+        , sample = "REXO RENIV CAPORTEOF QEI"
+        , orthoDir = Ltr
+        , wordGenerator =
+            let
+                consonants =
+                    String.toList "BCDFGHLMNPQRSTVXZ" |> List.map String.fromChar
 
-            followingConsonants =
-                String.toList "CGLPRST" |> List.map String.fromChar
+                followingConsonants =
+                    String.toList "CGLPRST" |> List.map String.fromChar
 
-            vowels =
-                String.toList "AEIOV" |> List.map String.fromChar
-         in
-         CvOrtho
-            { maxSegments = 6
-            , consonants = consonants
-            , followingConsonants = followingConsonants
-            , vowels = vowels
-            }
-        )
-        (Ortho
-            { title = "Roman Letters"
-            , note = "The Roman alphabet. Easiest for new players who speak English."
-            , sample = "REXO RENIV CAPORTEOF QEI"
-            , orthoDir = Ltr
-            , wordGenerator = \_ -> Random.constant "<OVERRIDE>"
-            }
-        )
+                vowels =
+                    String.toList "AEIOV" |> List.map String.fromChar
+            in
+            CvOrtho
+                { maxSegments = 6
+                , consonants = consonants
+                , followingConsonants = followingConsonants
+                , vowels = vowels
+                }
+                |> wordGeneratorFromCvOrtho
+        }
 
 
 oldItalicOrthography : Orthography
 oldItalicOrthography =
-    orthoFromCvOrtho
-        (let
-            consonants =
-                String.split " " "𐌁 𐌂 𐌃 𐌅 𐌆 𐌇 𐌈 𐌊 𐌋 𐌌 𐌍 𐌎 𐌐 𐌑 𐌒 𐌛 𐌔 𐌕 𐌗 𐌘 𐌙 𐌚"
+    Ortho
+        { title = "Old Italic"
+        , note = "A dead script used by the Etruscans and other ancient Italian peoples."
+        , sample = "𐌑𐌀𐌁𐌉𐌖𐌒 𐌆𐌖𐌀𐌌𐌛𐌄𐌕 𐌛𐌖𐌄𐌕 𐌖𐌐𐌏𐌖"
+        , orthoDir = Ltr
+        , wordGenerator =
+            let
+                consonants =
+                    String.split " " "𐌁 𐌂 𐌃 𐌅 𐌆 𐌇 𐌈 𐌊 𐌋 𐌌 𐌍 𐌎 𐌐 𐌑 𐌒 𐌛 𐌔 𐌕 𐌗 𐌘 𐌙 𐌚"
 
-            vowels =
-                String.split " " "𐌀 𐌄 𐌉 𐌏 𐌖"
-         in
-         CvOrtho
-            { maxSegments = 6
-            , consonants = consonants
-            , followingConsonants = consonants
-            , vowels = vowels
-            }
-        )
-        (Ortho
-            { title = "Old Italic"
-            , note = "A dead script used by the Etruscans and other ancient Italian peoples."
-            , sample = "𐌑𐌀𐌁𐌉𐌖𐌒 𐌆𐌖𐌀𐌌𐌛𐌄𐌕 𐌛𐌖𐌄𐌕 𐌖𐌐𐌏𐌖"
-            , orthoDir = Ltr
-            , wordGenerator = \_ -> Random.constant "<OVERRIDE>"
-            }
-        )
+                vowels =
+                    String.split " " "𐌀 𐌄 𐌉 𐌏 𐌖"
+            in
+            CvOrtho
+                { maxSegments = 6
+                , consonants = consonants
+                , followingConsonants = consonants
+                , vowels = vowels
+                }
+                |> wordGeneratorFromCvOrtho
+        }
