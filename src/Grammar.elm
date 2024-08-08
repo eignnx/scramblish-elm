@@ -1,6 +1,6 @@
 module Grammar exposing (..)
 
-import Html exposing (Html, a, dd, details, div, dl, dt, h2, span, summary, text)
+import Html exposing (Html, a, dd, details, div, dl, dt, span, summary, text)
 import Html.Attributes exposing (attribute, class, href, id)
 import Random
 import Set

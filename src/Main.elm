@@ -6,7 +6,7 @@ import Grammar exposing (..)
 import Html exposing (Html, button, div, footer, h1, h3, header, main_, section, text)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
-import Mutation exposing (GrammarMut, applyGrammarMut)
+import Mutation exposing (GrammarMut, applyGrammarMut, mutateSyntaxTree)
 import Platform.Cmd as Cmd
 import Random
 
@@ -30,7 +30,7 @@ main =
 
 
 type alias Model =
-    { examples : List (Translation SyntaxTree)
+    { examples : List SyntaxTree
     , scramblishGrammar : GrammarMut
     }
 
@@ -65,7 +65,7 @@ subscriptions _ =
 
 type Msg
     = AddExample
-    | GeneratedExample (Translation SyntaxTree)
+    | GeneratedExample SyntaxTree
     | MutateEnGrammar
     | MutationCreated Mutation.GrammarMut
 
@@ -88,12 +88,9 @@ update msg model =
 
 randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg
 randomSentences eng engMut start =
-    Random.generate GeneratedExample
-        (generateSyntaxTree eng (Nt start)
-            |> Random.map (\engTree -> ( engTree, Mutation.mutateSyntaxTree engMut engTree ))
-            |> Random.map
-                (\( engTree, scrTree ) -> { eng = engTree, scr = scrTree })
-        )
+    Random.generate
+        GeneratedExample
+        (generateSyntaxTree eng (Nt start))
 
 
 generateScramblishGrammar : Cmd Msg
@@ -115,7 +112,7 @@ view model =
         , main_ []
             [ section [ class "container" ]
                 ((model.examples
-                    |> List.indexedMap sentenceExampleView
+                    |> List.indexedMap (sentenceExampleView model.scramblishGrammar)
                  )
                     ++ [ button [ onClick AddExample ] [ text "+ Additional Example" ] ]
                 )
@@ -132,18 +129,22 @@ view model =
         ]
 
 
-sentenceExampleView : Int -> Translation SyntaxTree -> Html msg
-sentenceExampleView index { eng, scr } =
+sentenceExampleView : GrammarMut -> Int -> SyntaxTree -> Html msg
+sentenceExampleView grammarMut index engTree =
+    let
+        scrTree =
+            mutateSyntaxTree grammarMut engTree
+    in
     div [ style "padding-block" "1rem", class "example" ]
         [ h3 [] [ text ("Example " ++ String.fromInt (index + 1)) ]
         , div [ class "translation" ]
             [ div []
                 [ text "Scramblish:"
-                , syntaxTreeView scr
+                , syntaxTreeView scrTree
                 ]
             , div []
                 [ text "English:"
-                , syntaxTreeView eng
+                , syntaxTreeView engTree
                 ]
             ]
         ]
