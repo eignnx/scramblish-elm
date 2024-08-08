@@ -33,11 +33,20 @@ ruleMutGenerator ( nt, sf ) =
             )
 
 
-applyRuleMut : RuleMut -> SententialForm
-applyRuleMut { clausePermutation, oldSententialForm } =
+applyRuleMut : GrammarMut -> RuleMut -> SententialForm
+applyRuleMut gm { clausePermutation, oldSententialForm } =
     List.Extra.zip clausePermutation oldSententialForm
         |> List.sortBy (\( newIndex, _ ) -> newIndex)
         |> List.map (\( _, value ) -> value)
+        |> List.map
+            (\form ->
+                case form of
+                    TmForm (Tm word) ->
+                        Dict.get word gm.wordMapping |> Maybe.withDefault "[untranslatable]" |> Tm |> TmForm
+
+                    other ->
+                        other
+            )
 
 
 type alias GrammarMut =
@@ -73,12 +82,12 @@ grammarMutGenerator newTitle grammar =
 
 
 applyGrammarMut : GrammarMut -> Grammar
-applyGrammarMut { oldGrammar, newTitle, ruleMuts } =
-    { title = newTitle
+applyGrammarMut gm =
+    { title = gm.newTitle
     , rules =
-        List.Extra.zip oldGrammar.rules ruleMuts
+        List.Extra.zip gm.oldGrammar.rules gm.ruleMuts
             |> List.map
-                (\( ( nt, _ ), ruleMut ) -> ( nt, applyRuleMut ruleMut ))
+                (\( ( nt, _ ), ruleMut ) -> ( nt, applyRuleMut gm ruleMut ))
     }
 
 
@@ -86,7 +95,7 @@ mutateSyntaxTree : GrammarMut -> SyntaxTree -> SyntaxTree
 mutateSyntaxTree grammarMut oldTree =
     case oldTree of
         Leaf (Tm oldTm) ->
-            Leaf (Tm (Maybe.withDefault "[Untranslatable]" (Dict.get oldTm grammarMut.wordMapping)))
+            Leaf (Tm (Maybe.withDefault "[untranslatable]" (Dict.get oldTm grammarMut.wordMapping)))
 
         Node { nt, branchIndex, children } ->
             let
