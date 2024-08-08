@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Browser
+import Dict
 import EnGrammar exposing (..)
 import Grammar exposing (..)
 import Html exposing (Html, button, div, footer, h1, h3, header, main_, section, text)
@@ -42,6 +43,7 @@ init _ =
             { oldGrammar = en
             , newTitle = "Scramblish"
             , ruleMuts = []
+            , wordMapping = Dict.empty
             }
       }
     , Cmd.batch

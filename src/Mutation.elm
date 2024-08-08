@@ -1,6 +1,7 @@
 module Mutation exposing (..)
 
-import Grammar exposing (Grammar, Nt, SententialForm, SyntaxTree(..), Tm(..), lookupNt)
+import Dict
+import Grammar exposing (Form(..), Grammar, Nt, SententialForm, SyntaxTree(..), Tm(..), lookupNt)
 import List.Extra
 import Random
 import Utils
@@ -43,20 +44,32 @@ type alias GrammarMut =
     { oldGrammar : Grammar
     , newTitle : String
     , ruleMuts : List RuleMut
+    , wordMapping : WordMapping
     }
 
 
 grammarMutGenerator : String -> Grammar -> Random.Generator GrammarMut
 grammarMutGenerator newTitle grammar =
-    grammar.rules
-        |> Utils.randomFlattenList ruleMutGenerator
-        |> Random.map
-            (\ruleMuts ->
-                { oldGrammar = grammar
-                , newTitle = newTitle
-                , ruleMuts = ruleMuts
-                }
-            )
+    let
+        wordMapping : Random.Generator WordMapping
+        wordMapping =
+            wordMappingGenerator grammar
+
+        ruleMutations : Random.Generator (List RuleMut)
+        ruleMutations =
+            Utils.randomFlattenList ruleMutGenerator grammar.rules
+
+        buildGrammarMutation ruleMuts wmap =
+            { oldGrammar = grammar
+            , newTitle = newTitle
+            , ruleMuts = ruleMuts
+            , wordMapping = wmap
+            }
+    in
+    Random.map2
+        buildGrammarMutation
+        ruleMutations
+        wordMapping
 
 
 applyGrammarMut : GrammarMut -> Grammar
@@ -73,7 +86,7 @@ mutateSyntaxTree : GrammarMut -> SyntaxTree -> SyntaxTree
 mutateSyntaxTree grammarMut oldTree =
     case oldTree of
         Leaf (Tm oldTm) ->
-            Leaf (Tm oldTm)
+            Leaf (Tm (Maybe.withDefault "[Untranslatable]" (Dict.get oldTm grammarMut.wordMapping)))
 
         Node { nt, branchIndex, children } ->
             let
@@ -118,3 +131,46 @@ mutateSyntaxTree grammarMut oldTree =
                         |> List.map getPermutationIndex
             in
             Node { nt = nt, branchIndex = branchIndex, children = newChildren }
+
+
+
+-- WORD MUTATION
+
+
+type alias WordMapping =
+    Dict.Dict String String
+
+
+wordMappingGenerator : Grammar -> Random.Generator WordMapping
+wordMappingGenerator { rules } =
+    let
+        allSrcTerminals : List String
+        allSrcTerminals =
+            rules
+                |> List.concatMap
+                    (\( _, sf ) ->
+                        sf
+                            |> List.filterMap
+                                (\form ->
+                                    case form of
+                                        NtForm _ ->
+                                            Nothing
+
+                                        TmForm (Tm word) ->
+                                            Just word
+                                )
+                    )
+    in
+    allSrcTerminals
+        |> Utils.randomFlattenList
+            (\word ->
+                Random.pair
+                    (Random.constant word)
+                    (randomWordGenerator word)
+            )
+        |> Random.map Dict.fromList
+
+
+randomWordGenerator : String -> Random.Generator String
+randomWordGenerator eng =
+    Random.constant (String.reverse eng)
