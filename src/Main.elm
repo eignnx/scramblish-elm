@@ -11,8 +11,6 @@ import Mutation exposing (GrammarMut, mutateSyntaxTree)
 import Orthography exposing (chooseOrtho)
 import Platform.Cmd as Cmd exposing (Cmd)
 import Random
-import Task
-import Time
 import Utils
 
 
