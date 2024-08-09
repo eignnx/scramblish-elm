@@ -8,8 +8,12 @@ import Html exposing (Html, button, div, footer, h1, h3, header, main_, section,
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
 import Mutation exposing (GrammarMut, mutateSyntaxTree)
-import Platform.Cmd as Cmd
+import Orthography exposing (chooseOrtho)
+import Platform.Cmd as Cmd exposing (Cmd)
 import Random
+import Task
+import Time
+import Utils
 
 
 
@@ -44,10 +48,14 @@ init _ =
             , newTitle = "Scramblish"
             , ruleMuts = []
             , wordMapping = Dict.empty
+            , orthography = Orthography.romanOrthography
             }
       }
     , Cmd.batch
-        [ Random.generate MutationCreated <| Mutation.grammarMutGenerator "Scramblish" en
+        [ generateScramblishGrammar
+        , Utils.doCmd AddExample
+        , Utils.doCmd AddExample
+        , Utils.doCmd AddExample
         ]
     )
 
@@ -97,7 +105,13 @@ randomSentences eng engMut start =
 
 generateScramblishGrammar : Cmd Msg
 generateScramblishGrammar =
-    Random.generate MutationCreated (Mutation.grammarMutGenerator "Scramblish" en)
+    Random.generate MutationCreated
+        (chooseOrtho
+            |> Random.andThen
+                (\ortho ->
+                    Mutation.grammarMutGenerator "Scramblish" ortho en
+                )
+        )
 
 
 
@@ -142,11 +156,11 @@ sentenceExampleView grammarMut index engTree =
         , div [ class "translation" ]
             [ div []
                 [ text "Scramblish:"
-                , syntaxTreeView scrTree
+                , syntaxTreeView grammarMut.orthography.id scrTree
                 ]
             , div []
                 [ text "English:"
-                , syntaxTreeView engTree
+                , syntaxTreeView "english" engTree
                 ]
             ]
         ]

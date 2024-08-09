@@ -163,12 +163,12 @@ renderTm (Tm tm) =
     span [ class "terminal" ] [ text tm ]
 
 
-syntaxTreeView : SyntaxTree -> Html msg
-syntaxTreeView tree =
+syntaxTreeView : String -> SyntaxTree -> Html msg
+syntaxTreeView scriptName tree =
     syntaxTreeToWordList tree
         |> List.map (\word -> span [ class "word" ] [ text word ])
         |> List.intersperse (span [ class "whitespace" ] [ text " " ])
-        |> span [ class "sentence" ]
+        |> span [ class "sentence", class ("script-name--" ++ scriptName) ]
 
 
 syntaxTreeToWordList : SyntaxTree -> List String

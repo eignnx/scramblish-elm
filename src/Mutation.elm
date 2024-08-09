@@ -3,6 +3,7 @@ module Mutation exposing (..)
 import Dict
 import Grammar exposing (Form(..), Grammar, Nt, SententialForm, SyntaxTree(..), Tm(..), lookupNt)
 import List.Extra
+import Orthography exposing (Orthography)
 import Random
 import Utils
 
@@ -54,31 +55,34 @@ type alias GrammarMut =
     , newTitle : String
     , ruleMuts : List RuleMut
     , wordMapping : WordMapping
+    , orthography : Orthography
     }
 
 
-grammarMutGenerator : String -> Grammar -> Random.Generator GrammarMut
-grammarMutGenerator newTitle grammar =
+grammarMutGenerator : String -> Orthography -> Grammar -> Random.Generator GrammarMut
+grammarMutGenerator newTitle ortho grammar =
     let
         wordMapping : Random.Generator WordMapping
         wordMapping =
-            wordMappingGenerator grammar
+            wordMappingGenerator grammar ortho
 
         ruleMutations : Random.Generator (List RuleMut)
         ruleMutations =
             Utils.randomFlattenList ruleMutGenerator grammar.rules
 
-        buildGrammarMutation ruleMuts wmap =
+        buildGrammarMutation ruleMuts wmap orth =
             { oldGrammar = grammar
             , newTitle = newTitle
             , ruleMuts = ruleMuts
             , wordMapping = wmap
+            , orthography = orth
             }
     in
-    Random.map2
+    Random.map3
         buildGrammarMutation
         ruleMutations
         wordMapping
+        (Random.constant ortho)
 
 
 applyGrammarMut : GrammarMut -> Grammar
@@ -150,36 +154,31 @@ type alias WordMapping =
     Dict.Dict String String
 
 
-wordMappingGenerator : Grammar -> Random.Generator WordMapping
-wordMappingGenerator { rules } =
+wordMappingGenerator : Grammar -> Orthography -> Random.Generator WordMapping
+wordMappingGenerator { rules } ortho =
     let
+        extractTerminal : Form -> Maybe String
+        extractTerminal form =
+            case form of
+                NtForm _ ->
+                    Nothing
+
+                TmForm (Tm word) ->
+                    Just word
+
+        extractTerminalFromRule : ( a, List Form ) -> List String
+        extractTerminalFromRule ( _, sf ) =
+            sf |> List.filterMap extractTerminal
+
         allSrcTerminals : List String
         allSrcTerminals =
-            rules
-                |> List.concatMap
-                    (\( _, sf ) ->
-                        sf
-                            |> List.filterMap
-                                (\form ->
-                                    case form of
-                                        NtForm _ ->
-                                            Nothing
-
-                                        TmForm (Tm word) ->
-                                            Just word
-                                )
-                    )
+            rules |> List.concatMap extractTerminalFromRule
     in
     allSrcTerminals
         |> Utils.randomFlattenList
             (\word ->
                 Random.pair
                     (Random.constant word)
-                    (randomWordGenerator word)
+                    (ortho.wordGenerator word)
             )
         |> Random.map Dict.fromList
-
-
-randomWordGenerator : String -> Random.Generator String
-randomWordGenerator eng =
-    Random.constant (String.reverse eng)

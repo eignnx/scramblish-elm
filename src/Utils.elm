@@ -2,6 +2,8 @@ module Utils exposing (..)
 
 import List.Extra
 import Random
+import Task
+import Time
 
 
 expect : (() -> String) -> Maybe a -> a
@@ -123,3 +125,12 @@ stringHash s =
         |> String.toList
         |> List.map Char.toCode
         |> List.foldl update 0
+
+
+
+-- CMD
+
+
+doCmd : msg -> Cmd msg
+doCmd msg =
+    Time.now |> Task.perform (\_ -> msg)

@@ -1,6 +1,8 @@
 module Orthography exposing (..)
 
+import Html.Attributes exposing (maxlength)
 import Random
+import String exposing (toInt)
 import Utils
 
 
@@ -9,14 +11,31 @@ type OrthoDir
     | Rtl
 
 
-type Orthography
-    = Ortho
-        { title : String
-        , note : String
-        , orthoDir : OrthoDir
-        , sample : String
-        , wordGenerator : String -> Random.Generator String
-        }
+type alias Orthography =
+    { title : String
+    , id : String
+    , note : String
+    , orthoDir : OrthoDir
+    , sample : String
+    , wordGenerator : String -> Random.Generator String
+    }
+
+
+chooseOrtho : Random.Generator Orthography
+chooseOrtho =
+    case orthographies of
+        [] ->
+            Debug.todo "No orthographies to choose from"
+
+        o :: os ->
+            Random.uniform o os
+
+
+orthographies : List Orthography
+orthographies =
+    [ romanOrthography
+    , oldItalicOrthography
+    ]
 
 
 type ConsonantVowelOrthoraphy
@@ -36,6 +55,15 @@ wordGeneratorFromCvOrtho (CvOrtho cvOrtho) =
             let
                 -- wordSeed =
                 --     Random.initialSeed (stringHash word)
+                maxLen =
+                    toFloat cvOrtho.maxSegments
+
+                chosenLength : Random.Generator Int
+                chosenLength =
+                    Random.float (1.0 ^ 0.333) (maxLen ^ 0.333)
+                        |> Random.map (\r -> r * r * r)
+                        |> Random.map truncate
+
                 someC =
                     cvOrtho.consonants |> Utils.randomChoice "￼"
 
@@ -69,60 +97,64 @@ wordGeneratorFromCvOrtho (CvOrtho cvOrtho) =
                                 ]
                             |> Random.andThen (loop (segmentsRemaining - 1))
             in
-            loop cvOrtho.maxSegments ""
-                |> Random.andThen (possiblyAppend 0.333 someC)
+            chosenLength
+                |> Random.andThen
+                    (\len ->
+                        loop len ""
+                            |> Random.andThen (possiblyAppend 0.333 someC)
+                    )
     in
     wordGenerator
 
 
 romanOrthography : Orthography
 romanOrthography =
-    Ortho
-        { title = "Roman Letters"
-        , note = "The Roman alphabet. Easiest for new players who speak English."
-        , sample = "REXO RENIV CAPORTEOF QEI"
-        , orthoDir = Ltr
-        , wordGenerator =
-            let
-                consonants =
-                    String.toList "BCDFGHLMNPQRSTVXZ" |> List.map String.fromChar
+    { title = "Roman Letters"
+    , id = "roman"
+    , note = "The Roman alphabet. Easiest for new players who speak English."
+    , sample = "REXO RENIV CAPORTEOF QEI"
+    , orthoDir = Ltr
+    , wordGenerator =
+        let
+            consonants =
+                String.toList "BCDFGHLMNPQRSTVXZ" |> List.map String.fromChar
 
-                followingConsonants =
-                    String.toList "CGLPRST" |> List.map String.fromChar
+            followingConsonants =
+                String.toList "CGLPRST" |> List.map String.fromChar
 
-                vowels =
-                    String.toList "AEIOV" |> List.map String.fromChar
-            in
-            CvOrtho
-                { maxSegments = 6
-                , consonants = consonants
-                , followingConsonants = followingConsonants
-                , vowels = vowels
-                }
-                |> wordGeneratorFromCvOrtho
-        }
+            vowels =
+                String.toList "AEIOV" |> List.map String.fromChar
+        in
+        CvOrtho
+            { maxSegments = 5
+            , consonants = consonants
+            , followingConsonants = followingConsonants
+            , vowels = vowels
+            }
+            |> wordGeneratorFromCvOrtho
+    }
 
 
 oldItalicOrthography : Orthography
 oldItalicOrthography =
-    Ortho
-        { title = "Old Italic"
-        , note = "A dead script used by the Etruscans and other ancient Italian peoples."
-        , sample = "𐌑𐌀𐌁𐌉𐌖𐌒 𐌆𐌖𐌀𐌌𐌛𐌄𐌕 𐌛𐌖𐌄𐌕 𐌖𐌐𐌏𐌖"
-        , orthoDir = Ltr
-        , wordGenerator =
-            let
-                consonants =
-                    String.split " " "𐌁 𐌂 𐌃 𐌅 𐌆 𐌇 𐌈 𐌊 𐌋 𐌌 𐌍 𐌎 𐌐 𐌑 𐌒 𐌛 𐌔 𐌕 𐌗 𐌘 𐌙 𐌚"
+    { title = "Old Italic"
+    , id = "old-italic"
+    , note = "A dead script used by the Etruscans and other ancient Italian peoples."
+    , sample = "𐌑𐌀𐌁𐌉𐌖𐌒 𐌆𐌖𐌀𐌌𐌛𐌄𐌕 𐌛𐌖𐌄𐌕 𐌖𐌐𐌏𐌖"
+    , orthoDir = Ltr
+    , wordGenerator =
+        let
+            consonants =
+                String.split " " "𐌁 𐌂 𐌃 𐌅 𐌆 𐌇 𐌈 𐌊 𐌋 𐌌 𐌍 𐌎 𐌐 𐌑 𐌒 𐌛 𐌔 𐌕 𐌗 𐌘 𐌙 𐌚"
 
-                vowels =
-                    String.split " " "𐌀 𐌄 𐌉 𐌏 𐌖"
-            in
-            CvOrtho
-                { maxSegments = 6
-                , consonants = consonants
-                , followingConsonants = consonants
-                , vowels = vowels
-                }
-                |> wordGeneratorFromCvOrtho
-        }
+            vowels =
+                String.split " " "𐌀 𐌄 𐌉 𐌏 𐌖"
+        in
+        CvOrtho
+            { maxSegments = 5
+            , consonants = consonants
+            , followingConsonants = consonants
+            , vowels = vowels
+            }
+            |> wordGeneratorFromCvOrtho
+    }

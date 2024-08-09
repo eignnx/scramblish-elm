@@ -226,3 +226,11 @@ a.nonterminal:hover {
 .sentence {
     padding-inline-start: 1rem;
 }
+
+.script-name--roman {
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.script-name--old-italic {
+    font-family: Arial, Helvetica, sans-serif;
+}
