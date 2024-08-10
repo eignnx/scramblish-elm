@@ -13,12 +13,26 @@ type Val
     = Text String
     | Var String
     | Atom String
-    | Nt String (List Val)
+    | Nt String Args
+
+
+type alias Goal =
+    Val
+
+
+{-| A _conjunction_ of subgoals.
+-}
+type alias Query =
+    List Goal
+
+
+type alias Args =
+    List Val
 
 
 type alias Clause =
-    { params : List Val
-    , body : List Val
+    { params : Args
+    , body : Query
     }
 
 
@@ -139,41 +153,38 @@ type SolveError
     | Failure
 
 
-{-| A _conjunction_ of subgoals.
--}
-type alias Query =
-    List Val
-
-
-findFirstClause : Db -> USet -> String -> List Val -> Result SolveError ( USet, List Val )
-findFirstClause db u0 predName argsDup =
+getClauses : Db -> String -> Result SolveError (List Clause)
+getClauses db predName =
     Dict.get predName db.rules
         |> Result.fromMaybe (UndefinedPredicate predName)
-        |> Result.andThen
-            (\clauses ->
-                clauses
-                    |> List.Extra.findMap
-                        (\clause ->
-                            unifyList u0 argsDup clause.params
-                                |> Maybe.map (\u1 -> ( u1, clause.body ))
-                        )
-                    |> Result.fromMaybe Failure
+
+
+findMatchingClause : USet -> Args -> List Clause -> Result SolveError ( USet, List Val )
+findMatchingClause u0 args clauses =
+    clauses
+        |> List.Extra.findMap
+            (\clause ->
+                unifyList u0 args clause.params
+                    |> Maybe.map (\u1 -> ( u1, clause.body ))
             )
+        |> Result.fromMaybe Failure
 
 
-findFirstSolnFromVal : Db -> USet -> Val -> Result SolveError USet
-findFirstSolnFromVal db u0 q =
-    case q of
+findFirstClause : Db -> USet -> String -> Args -> Result SolveError ( USet, List Val )
+findFirstClause db u0 predName argsDup =
+    getClauses db predName
+        |> Result.andThen (findMatchingClause u0 argsDup)
+
+
+findFirstSolnFromVal : Db -> USet -> Goal -> Result SolveError USet
+findFirstSolnFromVal db u0 goal =
+    case goal of
         Nt predName args ->
-            let
-                argsDup =
-                    dupList args
-            in
-            findFirstClause db u0 predName argsDup
+            findFirstClause db u0 predName (dupList args)
                 |> Result.andThen (\( u1, body ) -> findFirstSoln db u1 body)
 
         _ ->
-            Err (UncallableValue q)
+            Err (UncallableValue goal)
 
 
 {-| Solves the query for the first solution only.
@@ -184,9 +195,9 @@ findFirstSoln db u0 queryParts =
         [] ->
             Ok u0
 
-        q :: qs ->
-            findFirstSolnFromVal db u0 q
-                |> Result.andThen (\u2 -> findFirstSoln db u2 qs)
+        goal :: remainingGoals ->
+            findFirstSolnFromVal db u0 goal
+                |> Result.andThen (\u2 -> findFirstSoln db u2 remainingGoals)
 
 
 unifyList : USet -> List Val -> List Val -> Maybe USet
