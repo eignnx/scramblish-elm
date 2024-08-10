@@ -4,6 +4,7 @@ module Logic exposing (..)
 -}
 
 import Dict exposing (Dict)
+import Html exposing (Html)
 import List.Extra
 import Maybe.Extra
 import Utils
@@ -51,7 +52,9 @@ exDb =
             ]
           )
         , ( "man"
-          , [ { params = [ Atom "socrates" ], body = [] } ]
+          , [ { params = [ Atom "socrates" ], body = [] }
+            , { params = [ Atom "plato" ], body = [] }
+            ]
           )
         ]
             |> Dict.fromList
@@ -159,45 +162,52 @@ getClauses db predName =
         |> Result.fromMaybe (UndefinedPredicate predName)
 
 
-findMatchingClause : USet -> Args -> List Clause -> Result SolveError ( USet, List Val )
-findMatchingClause u0 args clauses =
-    clauses
-        |> List.Extra.findMap
-            (\clause ->
-                unifyList u0 args clause.params
-                    |> Maybe.map (\u1 -> ( u1, clause.body ))
-            )
-        |> Result.fromMaybe Failure
-
-
-findFirstClause : Db -> USet -> String -> Args -> Result SolveError ( USet, List Val )
-findFirstClause db u0 predName argsDup =
+findMatchingClauses : Db -> USet -> String -> Args -> Result SolveError (List ( USet, Query ))
+findMatchingClauses db u0 predName argsDup =
     getClauses db predName
-        |> Result.andThen (findMatchingClause u0 argsDup)
+        |> Result.map
+            (\clauses ->
+                clauses
+                    |> List.filterMap
+                        (\clause ->
+                            unifyList u0 argsDup clause.params
+                                |> Maybe.map (\u1 -> ( u1, clause.body ))
+                        )
+            )
 
 
-findFirstSolnFromVal : Db -> USet -> Goal -> Result SolveError USet
-findFirstSolnFromVal db u0 goal =
+solveGoal : Db -> USet -> Goal -> List (Result SolveError USet)
+solveGoal db u0 goal =
     case goal of
         Nt predName args ->
-            findFirstClause db u0 predName (dupList args)
-                |> Result.andThen (\( u1, body ) -> findFirstSoln db u1 body)
+            case findMatchingClauses db u0 predName (dupList args) of
+                Err e ->
+                    [ Err e ]
+
+                Ok clauseMatches ->
+                    clauseMatches |> List.concatMap (\( u1, body ) -> solveQuery db u1 body)
 
         _ ->
-            Err (UncallableValue goal)
+            [ Err (UncallableValue goal) ]
 
 
-{-| Solves the query for the first solution only.
--}
-findFirstSoln : Db -> USet -> Query -> Result SolveError USet
-findFirstSoln db u0 queryParts =
+solveQuery : Db -> USet -> Query -> List (Result SolveError USet)
+solveQuery db u0 queryParts =
     case queryParts of
         [] ->
-            Ok u0
+            [ Ok u0 ]
 
         goal :: remainingGoals ->
-            findFirstSolnFromVal db u0 goal
-                |> Result.andThen (\u2 -> findFirstSoln db u2 remainingGoals)
+            solveGoal db u0 goal
+                |> List.concatMap
+                    (\res ->
+                        case res of
+                            Err e ->
+                                [ Err e ]
+
+                            Ok u1 ->
+                                solveQuery db u1 remainingGoals
+                    )
 
 
 unifyList : USet -> List Val -> List Val -> Maybe USet
@@ -236,3 +246,24 @@ simplifyVal u val =
 
         _ ->
             val
+
+
+viewUSet : USet -> Html.Html a
+viewUSet u =
+    u
+        |> Dict.foldl
+            (\k v acc ->
+                acc
+                    ++ [ Html.tr []
+                            [ Html.td [] [ Html.text k ]
+                            , Html.td [] [ Html.text "->" ]
+                            , Html.td []
+                                [ v
+                                    |> Debug.toString
+                                    |> Html.text
+                                ]
+                            ]
+                       ]
+            )
+            []
+        |> (\rows -> Html.div [] rows)

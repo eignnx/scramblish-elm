@@ -16,6 +16,29 @@ indexed xs =
         xs
 
 
+resultTranspose : Result e (List t) -> List (Result e t)
+resultTranspose res =
+    case res of
+        Ok ts ->
+            List.map Ok ts
+
+        Err e ->
+            [ Err e ]
+
+
+tryCollect : List (Result e t) -> Result e (List t)
+tryCollect results =
+    case results of
+        [] ->
+            Ok []
+
+        (Err e) :: _ ->
+            Err e
+
+        (Ok t) :: rs ->
+            tryCollect rs |> Result.map (\rs2 -> t :: rs2)
+
+
 
 -- STRING
 
