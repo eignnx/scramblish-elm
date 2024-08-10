@@ -3,6 +3,7 @@ module Grammar exposing (..)
 import Html exposing (Html, a, dd, details, div, dl, dt, span, summary, text)
 import Html.Attributes exposing (attribute, class, href, id)
 import Random
+import Random.Extra
 import Set
 import Utils
 
@@ -104,7 +105,7 @@ generateSyntaxTree grammar start =
 
         makeSyntaxTree : ( Int, SententialForm ) -> Random.Generator SyntaxTree
         makeSyntaxTree ( branchIndex, sententialForm ) =
-            Utils.randomFlattenList mapForm sententialForm
+            Random.Extra.flattenList mapForm sententialForm
                 |> Random.map
                     (\children ->
                         Node

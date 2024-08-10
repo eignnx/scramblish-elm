@@ -2,6 +2,7 @@ module Orthography exposing (..)
 
 import Html.Attributes exposing (maxlength)
 import Random
+import Random.Extra
 import String exposing (toInt)
 import Utils
 
@@ -65,17 +66,17 @@ wordGeneratorFromCvOrtho (CvOrtho cvOrtho) =
                         |> Random.map truncate
 
                 someC =
-                    cvOrtho.consonants |> Utils.randomChoice "￼"
+                    cvOrtho.consonants |> Random.Extra.choice "￼"
 
                 someCFollow =
-                    cvOrtho.followingConsonants |> Utils.randomChoice "￼"
+                    cvOrtho.followingConsonants |> Random.Extra.choice "￼"
 
                 someV =
-                    cvOrtho.vowels |> Utils.randomChoice "￼"
+                    cvOrtho.vowels |> Random.Extra.choice "￼"
 
                 possiblyAppend : Float -> Random.Generator appendable -> appendable -> Random.Generator appendable
                 possiblyAppend pct suffix base =
-                    Utils.choose pct
+                    Random.Extra.choose pct
                         (\() -> Random.map2 (++) (Random.constant base) suffix)
                         (\() -> Random.constant base)
 
@@ -86,7 +87,7 @@ wordGeneratorFromCvOrtho (CvOrtho cvOrtho) =
 
                     else
                         wordSoFar
-                            |> Utils.sequenceRandom
+                            |> Random.Extra.sequence
                                 [ possiblyAppend 0.05 someV
                                 , possiblyAppend 1.0 someC
                                 , possiblyAppend 0.2 someCFollow

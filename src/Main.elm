@@ -8,6 +8,7 @@ import Html exposing (Html, button, div, footer, h1, h3, header, main_, section,
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
 import Logic
+import Maybe.Extra
 import Mutation exposing (GrammarMut, mutateSyntaxTree)
 import Orthography exposing (chooseOrtho)
 import Platform.Cmd as Cmd exposing (Cmd)

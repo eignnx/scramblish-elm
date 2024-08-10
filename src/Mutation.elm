@@ -3,8 +3,10 @@ module Mutation exposing (..)
 import Dict
 import Grammar exposing (Form(..), Grammar, Nt, SententialForm, SyntaxTree(..), Tm(..), lookupNt)
 import List.Extra
+import Maybe.Extra
 import Orthography exposing (Orthography)
 import Random
+import Random.Extra
 import Utils
 
 
@@ -24,7 +26,7 @@ ruleMutGenerator ( nt, sf ) =
         indices =
             List.range 0 (len - 1)
     in
-    Utils.shuffled indices
+    Random.Extra.shuffled indices
         |> Random.map
             (\permutation ->
                 { lhs = nt
@@ -68,7 +70,7 @@ grammarMutGenerator newTitle ortho grammar =
 
         ruleMutations : Random.Generator (List RuleMut)
         ruleMutations =
-            Utils.randomFlattenList ruleMutGenerator grammar.rules
+            Random.Extra.flattenList ruleMutGenerator grammar.rules
 
         buildGrammarMutation ruleMuts wmap orth =
             { oldGrammar = grammar
@@ -113,7 +115,7 @@ mutateSyntaxTree grammarMut oldTree =
                 ruleMut =
                     ruleMuts
                         |> List.Extra.getAt branchIndex
-                        |> Utils.expect
+                        |> Maybe.Extra.expect
                             (\() ->
                                 "Branch index `"
                                     ++ String.fromInt branchIndex
@@ -129,7 +131,7 @@ mutateSyntaxTree grammarMut oldTree =
                 getPermutationIndex : Int -> SyntaxTree
                 getPermutationIndex index =
                     List.Extra.getAt index newChildrenUnpermuted
-                        |> Utils.expect
+                        |> Maybe.Extra.expect
                             (\() ->
                                 "Permutation indices `"
                                     ++ Debug.toString ruleMut.clausePermutation
@@ -175,7 +177,7 @@ wordMappingGenerator { rules } ortho =
             rules |> List.concatMap extractTerminalFromRule
     in
     allSrcTerminals
-        |> Utils.randomFlattenList
+        |> Random.Extra.flattenList
             (\word ->
                 Random.pair
                     (Random.constant word)

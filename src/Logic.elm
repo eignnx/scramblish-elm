@@ -5,6 +5,7 @@ module Logic exposing (..)
 
 import Dict exposing (Dict)
 import List.Extra
+import Maybe.Extra
 import Utils
 
 
@@ -179,7 +180,7 @@ unifyList u0 xs ys =
 
     else
         List.Extra.zip xs ys
-            |> Utils.foldMaybe u0 (\u1 ( x, y ) -> unify u1 x y)
+            |> Maybe.Extra.fold u0 (\u1 ( x, y ) -> unify u1 x y)
 
 
 dupList : List Val -> List Val
