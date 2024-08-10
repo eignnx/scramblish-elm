@@ -4,7 +4,7 @@ import Browser
 import Dict
 import EnGrammar exposing (..)
 import Grammar exposing (..)
-import Html exposing (Html, button, div, footer, h1, h3, header, main_, section, text)
+import Html exposing (Html, button, div, footer, h1, h3, header, hr, main_, section, text)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
 import Logic
@@ -132,13 +132,24 @@ view model =
                     ++ [ button [ onClick AddExample ] [ text "+ Additional Example" ] ]
                 )
             , section [ class "container" ]
-                [ Logic.findFirstSoln
+                [ Logic.solveQuery
                     Logic.exDb
                     Logic.usetEmpty
                     [ Logic.Nt "mortal" [ Logic.Var "X" ] ]
                     -- [ Logic.Nt "man" [ Logic.Atom "socrates" ] ]
-                    |> Debug.toString
-                    |> text
+                    -- |> Debug.toString
+                    -- |> text
+                    |> List.map
+                        (\res ->
+                            case res of
+                                Err e ->
+                                    e |> Debug.toString |> text
+
+                                Ok us ->
+                                    us |> Logic.viewUSet
+                        )
+                    |> List.intersperse (hr [] [])
+                    |> div [ class "all-solutions" ]
                 ]
             , section [ class "container", class "grammar-container" ]
                 [ renderGrammar en ]
