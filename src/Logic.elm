@@ -139,38 +139,54 @@ type SolveError
     | Failure
 
 
+{-| A _conjunction_ of subgoals.
+-}
+type alias Query =
+    List Val
+
+
+findFirstClause : Db -> USet -> String -> List Val -> Result SolveError ( USet, List Val )
+findFirstClause db u0 predName argsDup =
+    Dict.get predName db.rules
+        |> Result.fromMaybe (UndefinedPredicate predName)
+        |> Result.andThen
+            (\clauses ->
+                clauses
+                    |> List.Extra.findMap
+                        (\clause ->
+                            unifyList u0 argsDup clause.params
+                                |> Maybe.map (\u1 -> ( u1, clause.body ))
+                        )
+                    |> Result.fromMaybe Failure
+            )
+
+
+findFirstSolnFromVal : Db -> USet -> Val -> Result SolveError USet
+findFirstSolnFromVal db u0 q =
+    case q of
+        Nt predName args ->
+            let
+                argsDup =
+                    dupList args
+            in
+            findFirstClause db u0 predName argsDup
+                |> Result.andThen (\( u1, body ) -> findFirstSoln db u1 body)
+
+        _ ->
+            Err (UncallableValue q)
+
+
 {-| Solves the query for the first solution only.
 -}
-findFirstSoln : Db -> USet -> List Val -> Result SolveError USet
+findFirstSoln : Db -> USet -> Query -> Result SolveError USet
 findFirstSoln db u0 queryParts =
     case queryParts of
         [] ->
             Ok u0
 
-        -- Success
         q :: qs ->
-            case q of
-                Nt predName args ->
-                    let
-                        argsDup =
-                            dupList args
-                    in
-                    Dict.get predName db.rules
-                        |> Result.fromMaybe (UndefinedPredicate predName)
-                        |> Result.andThen
-                            (\clauses ->
-                                clauses
-                                    |> List.Extra.findMap
-                                        (\clause ->
-                                            unifyList u0 argsDup clause.params
-                                                |> Maybe.map (\u1 -> ( u1, clause.body ))
-                                        )
-                                    |> Result.fromMaybe Failure
-                                    |> Result.andThen (\( u1, body ) -> findFirstSoln db u1 body)
-                            )
-
-                _ ->
-                    Err (UncallableValue q)
+            findFirstSolnFromVal db u0 q
+                |> Result.andThen (\u2 -> findFirstSoln db u2 qs)
 
 
 unifyList : USet -> List Val -> List Val -> Maybe USet
