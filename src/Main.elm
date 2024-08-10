@@ -7,6 +7,7 @@ import Grammar exposing (..)
 import Html exposing (Html, button, div, footer, h1, h3, header, main_, section, text)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
+import Logic
 import Mutation exposing (GrammarMut, mutateSyntaxTree)
 import Orthography exposing (chooseOrtho)
 import Platform.Cmd as Cmd exposing (Cmd)
@@ -130,6 +131,15 @@ view model =
                  )
                     ++ [ button [ onClick AddExample ] [ text "+ Additional Example" ] ]
                 )
+            , section [ class "container" ]
+                [ Logic.findFirstSoln
+                    Logic.exDb
+                    Logic.usetEmpty
+                    [ Logic.Nt "mortal" [ Logic.Var "X" ] ]
+                    -- [ Logic.Nt "man" [ Logic.Atom "socrates" ] ]
+                    |> Debug.toString
+                    |> text
+                ]
             , section [ class "container", class "grammar-container" ]
                 [ renderGrammar en ]
             , section [ class "container", class "grammar-container" ]

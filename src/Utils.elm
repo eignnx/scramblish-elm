@@ -6,6 +6,10 @@ import Task
 import Time
 
 
+
+-- MAYBE
+
+
 expect : (() -> String) -> Maybe a -> a
 expect msg maybe =
     case maybe of
@@ -14,6 +18,21 @@ expect msg maybe =
 
         Nothing ->
             Debug.todo ("Expectation failure: `" ++ msg () ++ "`")
+
+
+foldMaybe : acc -> (acc -> x -> Maybe acc) -> List x -> Maybe acc
+foldMaybe acc1 f xs =
+    case xs of
+        [] ->
+            Just acc1
+
+        y :: ys ->
+            f acc1 y
+                |> Maybe.andThen (\acc2 -> foldMaybe acc2 f ys)
+
+
+
+-- RANDOM
 
 
 shuffled : List a -> Random.Generator (List a)
@@ -111,6 +130,10 @@ randomChoice default choices =
 
         x :: xs ->
             Random.uniform x xs
+
+
+
+-- STRING
 
 
 stringHash : String -> Int
