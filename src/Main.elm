@@ -36,6 +36,7 @@ main =
 type alias Model =
     { examples : List SyntaxTree
     , scramblishGrammar : GrammarMut
+    , querySolns : String
     }
 
 
@@ -49,6 +50,7 @@ init _ =
             , wordMapping = Dict.empty
             , orthography = Orthography.romanOrthography
             }
+      , querySolns = "<no solutions yet>"
       }
     , Cmd.batch
         [ generateScramblishGrammar
@@ -77,6 +79,8 @@ type Msg
     | GeneratedExample SyntaxTree
     | MutateEnGrammar
     | MutationCreated Mutation.GrammarMut
+    | RandomSolve
+    | RandomSolution (List (Result Logic.SolveError Logic.USet))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -93,6 +97,20 @@ update msg model =
 
         MutationCreated grammarMut ->
             ( { model | scramblishGrammar = grammarMut }, Cmd.none )
+
+        RandomSolve ->
+            ( model
+            , Random.generate
+                RandomSolution
+                (Logic.randomSolveQuery
+                    Logic.exDb
+                    Logic.usetEmpty
+                    [ Logic.Nt "mortal" [ Logic.Var "X" ] ]
+                )
+            )
+
+        RandomSolution solns ->
+            ( { model | querySolns = Debug.toString solns }, Cmd.none )
 
 
 randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg
@@ -132,25 +150,28 @@ view model =
                     ++ [ button [ onClick AddExample ] [ text "+ Additional Example" ] ]
                 )
             , section [ class "container" ]
-                [ Logic.solveQuery
-                    Logic.exDb
-                    Logic.usetEmpty
-                    [ Logic.Nt "mortal" [ Logic.Var "X" ] ]
-                    -- [ Logic.Nt "man" [ Logic.Atom "socrates" ] ]
-                    -- |> Debug.toString
-                    -- |> text
-                    |> List.map
-                        (\res ->
-                            case res of
-                                Err e ->
-                                    e |> Debug.toString |> text
-
-                                Ok us ->
-                                    us |> Logic.viewUSet
-                        )
-                    |> List.intersperse (hr [] [])
-                    |> div [ class "all-solutions" ]
+                [ button [ onClick RandomSolve ] [ text "Random Solve Query" ]
+                , text model.querySolns
                 ]
+
+            -- [ Logic.solveQuery
+            --     Logic.exDb
+            --     Logic.usetEmpty
+            --     [ Logic.Nt "mortal" [ Logic.Var "X" ] ]
+            --     -- [ Logic.Nt "man" [ Logic.Atom "socrates" ] ]
+            --     -- |> Debug.toString
+            --     -- |> text
+            --     |> List.map
+            --         (\res ->
+            --             case res of
+            --                 Err e ->
+            --                     e |> Debug.toString |> text
+            --                 Ok us ->
+            --                     us |> Logic.viewUSet
+            --         )
+            --     |> List.intersperse (hr [] [])
+            --     |> div [ class "all-solutions" ]
+            -- ]
             , section [ class "container", class "grammar-container" ]
                 [ renderGrammar en ]
             , section [ class "container", class "grammar-container" ]

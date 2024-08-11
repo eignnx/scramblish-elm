@@ -7,6 +7,8 @@ import Dict exposing (Dict)
 import Html exposing (Html)
 import List.Extra
 import Maybe.Extra
+import Random
+import Random.Extra
 import Utils
 
 
@@ -54,6 +56,9 @@ exDb =
         , ( "man"
           , [ { params = [ Atom "socrates" ], body = [] }
             , { params = [ Atom "plato" ], body = [] }
+            , { params = [ Atom "george" ], body = [] }
+            , { params = [ Atom "frank" ], body = [] }
+            , { params = [ Atom "ted" ], body = [] }
             ]
           )
         ]
@@ -267,3 +272,64 @@ viewUSet u =
             )
             []
         |> (\rows -> Html.div [] rows)
+
+
+
+-- RANDOM SOLVE QUERY
+
+
+randomSolveGoal : Db -> USet -> Goal -> Random.Generator (List (Result SolveError USet))
+randomSolveGoal db u0 goal =
+    case goal of
+        Nt predName args ->
+            case findMatchingClauses db u0 predName (dupList args) of
+                Err e ->
+                    Random.constant [ Err e ]
+
+                Ok clauseMatches ->
+                    clauseMatches
+                        |> Random.Extra.shuffled
+                        |> Random.andThen (tryClauses db)
+
+        _ ->
+            Random.constant [ Err (UncallableValue goal) ]
+
+
+tryClauses : Db -> List ( USet, Query ) -> Random.Generator (List (Result SolveError USet))
+tryClauses db clauses =
+    case clauses of
+        [] ->
+            Random.constant []
+
+        ( u, body ) :: remainingClauses ->
+            Random.map2 (++)
+                (randomSolveQuery db u body)
+                (tryClauses db remainingClauses)
+
+
+randomSolveQuery : Db -> USet -> Query -> Random.Generator (List (Result SolveError USet))
+randomSolveQuery db u0 queryParts =
+    case queryParts of
+        [] ->
+            Random.constant [ Ok u0 ]
+
+        goal :: remainingGoals ->
+            randomSolveGoal db u0 goal
+                |> Random.andThen (randomSolveRemainingGoals db remainingGoals)
+
+
+randomSolveRemainingGoals : Db -> Query -> List (Result SolveError USet) -> Random.Generator (List (Result SolveError USet))
+randomSolveRemainingGoals db remainingGoals solns =
+    case solns of
+        [] ->
+            Random.constant []
+
+        s :: ss ->
+            case s of
+                Err e ->
+                    Random.constant [ Err e ]
+
+                Ok u ->
+                    Random.map2 (++)
+                        (randomSolveQuery db u remainingGoals)
+                        (randomSolveRemainingGoals db remainingGoals ss)
