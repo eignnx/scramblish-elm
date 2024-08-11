@@ -4,7 +4,7 @@ module Logic exposing (..)
 -}
 
 import Dict exposing (Dict)
-import Html exposing (Html)
+import Html
 import List.Extra
 import Maybe.Extra
 import Random
