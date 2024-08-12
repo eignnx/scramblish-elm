@@ -7,11 +7,12 @@ import Grammar exposing (..)
 import Html exposing (Html, button, div, footer, h1, h3, header, hr, main_, section, text)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
-import Logic
+import Logic exposing (viewUSet)
 import Mutation exposing (GrammarMut, mutateSyntaxTree)
 import Orthography exposing (chooseOrtho)
 import Platform.Cmd as Cmd exposing (Cmd)
 import Random
+import Seq
 import Utils
 
 
@@ -80,7 +81,7 @@ type Msg
     | MutateEnGrammar
     | MutationCreated Mutation.GrammarMut
     | RandomSolve
-    | RandomSolution (List (Result Logic.SolveError Logic.USet))
+    | RandomSolution (Seq.Seq (Result Logic.SolveError Logic.USet))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -110,7 +111,15 @@ update msg model =
             )
 
         RandomSolution solns ->
-            ( { model | querySolns = Debug.toString solns }, Cmd.none )
+            case Seq.next solns of
+                Seq.Nil ->
+                    ( { model | querySolns = "No solution." }, Cmd.none )
+
+                Seq.Cons (Ok u) _ ->
+                    ( { model | querySolns = Debug.toString u }, Cmd.none )
+
+                Seq.Cons (Err e) _ ->
+                    ( { model | querySolns = "Error: " ++ Debug.toString e }, Cmd.none )
 
 
 randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg

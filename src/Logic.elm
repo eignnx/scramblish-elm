@@ -9,6 +9,7 @@ import List.Extra
 import Maybe.Extra
 import Random
 import Random.Extra
+import Seq
 import Utils
 
 
@@ -181,34 +182,36 @@ findMatchingClauses db u0 predName argsDup =
             )
 
 
-solveGoal : Db -> USet -> Goal -> List (Result SolveError USet)
+solveGoal : Db -> USet -> Goal -> Seq.Seq (Result SolveError USet)
 solveGoal db u0 goal =
     case goal of
         Nt predName args ->
             case findMatchingClauses db u0 predName (dupList args) of
                 Err e ->
-                    [ Err e ]
+                    Seq.singleton (Err e)
 
                 Ok clauseMatches ->
-                    clauseMatches |> List.concatMap (\( u1, body ) -> solveQuery db u1 body)
+                    clauseMatches
+                        |> Seq.fromList
+                        |> Seq.flatMap (\( u1, body ) -> solveQuery db u1 body)
 
         _ ->
-            [ Err (UncallableValue goal) ]
+            Seq.singleton (Err (UncallableValue goal))
 
 
-solveQuery : Db -> USet -> Query -> List (Result SolveError USet)
+solveQuery : Db -> USet -> Query -> Seq.Seq (Result SolveError USet)
 solveQuery db u0 queryParts =
     case queryParts of
         [] ->
-            [ Ok u0 ]
+            Seq.singleton (Ok u0)
 
         goal :: remainingGoals ->
             solveGoal db u0 goal
-                |> List.concatMap
+                |> Seq.flatMap
                     (\res ->
                         case res of
                             Err e ->
-                                [ Err e ]
+                                Seq.singleton (Err e)
 
                             Ok u1 ->
                                 solveQuery db u1 remainingGoals
@@ -278,13 +281,13 @@ viewUSet u =
 -- RANDOM SOLVE QUERY
 
 
-randomSolveGoal : Db -> USet -> Goal -> Random.Generator (List (Result SolveError USet))
+randomSolveGoal : Db -> USet -> Goal -> Random.Generator (Seq.Seq (Result SolveError USet))
 randomSolveGoal db u0 goal =
     case goal of
         Nt predName args ->
             case findMatchingClauses db u0 predName (dupList args) of
                 Err e ->
-                    Random.constant [ Err e ]
+                    Err e |> Seq.singleton |> Random.constant
 
                 Ok clauseMatches ->
                     clauseMatches
@@ -292,44 +295,44 @@ randomSolveGoal db u0 goal =
                         |> Random.andThen (tryClauses db)
 
         _ ->
-            Random.constant [ Err (UncallableValue goal) ]
+            Err (UncallableValue goal) |> Seq.singleton |> Random.constant
 
 
-tryClauses : Db -> List ( USet, Query ) -> Random.Generator (List (Result SolveError USet))
+tryClauses : Db -> List ( USet, Query ) -> Random.Generator (Seq.Seq (Result SolveError USet))
 tryClauses db clauses =
     case clauses of
         [] ->
-            Random.constant []
+            Random.constant Seq.empty
 
         ( u, body ) :: remainingClauses ->
-            Random.map2 (++)
+            Random.map2 Seq.append
                 (randomSolveQuery db u body)
                 (tryClauses db remainingClauses)
 
 
-randomSolveQuery : Db -> USet -> Query -> Random.Generator (List (Result SolveError USet))
+randomSolveQuery : Db -> USet -> Query -> Random.Generator (Seq.Seq (Result SolveError USet))
 randomSolveQuery db u0 queryParts =
     case queryParts of
         [] ->
-            Random.constant [ Ok u0 ]
+            Ok u0 |> Seq.singleton |> Random.constant
 
         goal :: remainingGoals ->
             randomSolveGoal db u0 goal
                 |> Random.andThen (randomSolveRemainingGoals db remainingGoals)
 
 
-randomSolveRemainingGoals : Db -> Query -> List (Result SolveError USet) -> Random.Generator (List (Result SolveError USet))
+randomSolveRemainingGoals : Db -> Query -> Seq.Seq (Result SolveError USet) -> Random.Generator (Seq.Seq (Result SolveError USet))
 randomSolveRemainingGoals db remainingGoals solns =
-    case solns of
-        [] ->
-            Random.constant []
+    case Seq.next solns of
+        Seq.Nil ->
+            Random.constant Seq.empty
 
-        s :: ss ->
+        Seq.Cons s ss ->
             case s of
                 Err e ->
-                    Random.constant [ Err e ]
+                    Err e |> Seq.singleton |> Random.constant
 
                 Ok u ->
-                    Random.map2 (++)
+                    Random.map2 Seq.append
                         (randomSolveQuery db u remainingGoals)
                         (randomSolveRemainingGoals db remainingGoals ss)
