@@ -1,6 +1,8 @@
 module EnGrammar exposing (..)
 
+import Dict
 import Grammar exposing (Form(..), Grammar, Nt(..), Tm(..))
+import Logic as L
 
 
 en : Grammar
@@ -35,4 +37,46 @@ en =
         , ( Nt "Preposition", [ TmForm (Tm "by") ] )
         , ( Nt "Preposition", [ TmForm (Tm "for") ] )
         ]
+    }
+
+
+
+-- LOGIC PROGRAM
+
+
+db : L.Db
+db =
+    { rules =
+        Dict.fromList
+            [ ( "=", [ { params = [ L.Var "X", L.Var "X" ], body = [] } ] )
+            , ( "append"
+              , [ { params = [ L.Atom "[]", L.Var "Y", L.Var "Y" ], body = [] }
+                , { params = [ L.Cons (L.Var "X") (L.Var "Xs"), L.Var "Ys", L.Cons (L.Var "X") (L.Var "Zs") ]
+                  , body = [ L.Comp "append" [ L.Var "Xs", L.Var "Ys", L.Var "Zs" ] ]
+                  }
+                ]
+              )
+            , ( "-->"
+              , [ { params = [ L.Comp "sentence" [ L.Var "Before", L.Var "After" ] ]
+                  , body =
+                        [ L.Comp "append"
+                            [ L.Var "Before"
+                            , L.toValList [ L.Text "the", L.Text "cat", L.Text "slept" ]
+                            , L.Var "After"
+                            ]
+                        ]
+                  }
+                ]
+              )
+            , ( "phrase"
+              , [ { params = [ L.Var "Rule", L.Var "Before", L.Var "After" ]
+                  , body =
+                        [ L.Comp "-->" [ L.Var "RuleHead" ]
+
+                        -- TODO
+                        ]
+                  }
+                ]
+              )
+            ]
     }

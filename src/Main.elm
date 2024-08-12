@@ -106,7 +106,7 @@ update msg model =
                 (Logic.randomSolveQuery
                     Logic.exDb
                     Logic.usetEmpty
-                    [ Logic.Nt "mortal" [ Logic.Var "X" ] ]
+                    [ Logic.Comp "mortal" [ Logic.Var "X" ] ]
                 )
             )
 

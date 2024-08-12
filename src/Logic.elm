@@ -17,7 +17,18 @@ type Val
     = Text String
     | Var String
     | Atom String
-    | Nt String Args
+    | Cons Val Val
+    | Comp String Args
+
+
+toValList : List Val -> Val
+toValList list =
+    case list of
+        [] ->
+            Atom "[]"
+
+        x :: xs ->
+            Cons x (toValList xs)
 
 
 type alias Goal =
@@ -51,7 +62,7 @@ exDb : Db
 exDb =
     { rules =
         [ ( "mortal"
-          , [ { params = [ Var "Entity" ], body = [ Nt "man" [ Var "Entity" ] ] }
+          , [ { params = [ Var "Entity" ], body = [ Comp "man" [ Var "Entity" ] ] }
             ]
           )
         , ( "man"
@@ -95,12 +106,15 @@ unify u0 x y =
             else
                 Nothing
 
-        ( Nt nx px, Nt ny py ) ->
+        ( Comp nx px, Comp ny py ) ->
             if nx == ny then
                 unifyList u0 px py
 
             else
                 Nothing
+
+        ( Cons h1 t1, Cons h2 t2 ) ->
+            unify u0 h1 h2 |> Maybe.andThen (\u1 -> unify u1 t1 t2)
 
         ( Var vx, _ ) ->
             simplifyVal u0 y |> (\yy -> Dict.insert vx yy u0) |> Just
@@ -108,22 +122,7 @@ unify u0 x y =
         ( _, Var vy ) ->
             simplifyVal u0 x |> (\xx -> Dict.insert vy xx u0) |> Just
 
-        ( Text _, Atom _ ) ->
-            Nothing
-
-        ( Text _, Nt _ _ ) ->
-            Nothing
-
-        ( Atom _, Text _ ) ->
-            Nothing
-
-        ( Atom _, Nt _ _ ) ->
-            Nothing
-
-        ( Nt _ _, Text _ ) ->
-            Nothing
-
-        ( Nt _ _, Atom _ ) ->
+        _ ->
             Nothing
 
 
@@ -160,6 +159,7 @@ type SolveError
     = UncallableValue Val
     | UndefinedPredicate String
     | Failure
+    | TypeError String Args
 
 
 getClauses : Db -> String -> Result SolveError (List Clause)
@@ -182,10 +182,14 @@ findMatchingClauses db u0 predName argsDup =
             )
 
 
-solveGoal : Db -> USet -> Goal -> Seq.Seq (Result SolveError USet)
+type alias SolnStream =
+    Seq.Seq (Result SolveError USet)
+
+
+solveGoal : Db -> USet -> Goal -> SolnStream
 solveGoal db u0 goal =
     case goal of
-        Nt predName args ->
+        Comp predName args ->
             case findMatchingClauses db u0 predName (dupList args) of
                 Err e ->
                     Seq.singleton (Err e)
@@ -199,7 +203,7 @@ solveGoal db u0 goal =
             Seq.singleton (Err (UncallableValue goal))
 
 
-solveQuery : Db -> USet -> Query -> Seq.Seq (Result SolveError USet)
+solveQuery : Db -> USet -> Query -> SolnStream
 solveQuery db u0 queryParts =
     case queryParts of
         [] ->
@@ -249,8 +253,8 @@ simplifyVal u val =
         Var v ->
             usetLookup u v |> Maybe.withDefault val
 
-        Nt name args ->
-            Nt name (args |> List.map (simplifyVal u))
+        Comp name args ->
+            Comp name (args |> List.map (simplifyVal u))
 
         _ ->
             val
@@ -281,10 +285,10 @@ viewUSet u =
 -- RANDOM SOLVE QUERY
 
 
-randomSolveGoal : Db -> USet -> Goal -> Random.Generator (Seq.Seq (Result SolveError USet))
+randomSolveGoal : Db -> USet -> Goal -> Random.Generator SolnStream
 randomSolveGoal db u0 goal =
     case goal of
-        Nt predName args ->
+        Comp predName args ->
             case findMatchingClauses db u0 predName (dupList args) of
                 Err e ->
                     Err e |> Seq.singleton |> Random.constant
@@ -298,7 +302,7 @@ randomSolveGoal db u0 goal =
             Err (UncallableValue goal) |> Seq.singleton |> Random.constant
 
 
-tryClauses : Db -> List ( USet, Query ) -> Random.Generator (Seq.Seq (Result SolveError USet))
+tryClauses : Db -> List ( USet, Query ) -> Random.Generator SolnStream
 tryClauses db clauses =
     case clauses of
         [] ->
@@ -310,7 +314,7 @@ tryClauses db clauses =
                 (tryClauses db remainingClauses)
 
 
-randomSolveQuery : Db -> USet -> Query -> Random.Generator (Seq.Seq (Result SolveError USet))
+randomSolveQuery : Db -> USet -> Query -> Random.Generator SolnStream
 randomSolveQuery db u0 queryParts =
     case queryParts of
         [] ->
@@ -321,7 +325,7 @@ randomSolveQuery db u0 queryParts =
                 |> Random.andThen (randomSolveRemainingGoals db remainingGoals)
 
 
-randomSolveRemainingGoals : Db -> Query -> Seq.Seq (Result SolveError USet) -> Random.Generator (Seq.Seq (Result SolveError USet))
+randomSolveRemainingGoals : Db -> Query -> SolnStream -> Random.Generator SolnStream
 randomSolveRemainingGoals db remainingGoals solns =
     case Seq.next solns of
         Seq.Nil ->
@@ -336,3 +340,85 @@ randomSolveRemainingGoals db remainingGoals solns =
                     Random.map2 Seq.append
                         (randomSolveQuery db u remainingGoals)
                         (randomSolveRemainingGoals db remainingGoals ss)
+
+
+
+-- BUILTINS
+
+
+unifying : USet -> Val -> Val -> SolnStream
+unifying u x y =
+    case unify u x y of
+        Just u1 ->
+            Seq.singleton (Ok u1)
+
+        Nothing ->
+            Seq.empty
+
+
+builtins : Dict.Dict String (Db -> USet -> Args -> SolnStream)
+builtins =
+    Dict.fromList
+        [ ( "clause_head_clause_body"
+          , \db u0 params ->
+                case params of
+                    [ Comp predName args, body ] ->
+                        case findMatchingClauses db u0 predName args of
+                            Err e ->
+                                Seq.singleton (Err e)
+
+                            Ok clauseMatches ->
+                                clauseMatches
+                                    |> Seq.fromList
+                                    |> Seq.flatMap
+                                        (\( u1, clauseBody ) ->
+                                            unifying u1 body (toValList clauseBody)
+                                        )
+
+                    _ ->
+                        Seq.singleton (Err (TypeError "Invalid arguments to clause_head_clause_body" params))
+          )
+
+        -- , ( "=.."
+        --   , \db u0 params ->
+        --         case params of
+        --             -- `V =.. [name, Arg1, Arg2]`
+        --             [ Var v, Cons name args ] ->
+        --                 let
+        --                     nameStrRes =
+        --                         case name of
+        --                             Atom str ->
+        --                                 Ok str
+        --                             _ ->
+        --                                 Err (TypeError "Cannot construct a compound term with a non-atom name." params)
+        --                     argsAsListRes : Result SolveError (List Val)
+        --                     argsAsListRes =
+        --                         fromValList args |> Result.fromMaybe (TypeError "Non-list tail on RHS of =.." params)
+        --                 in
+        --                 case ( nameStrRes, argsAsListRes ) of
+        --                     ( Ok nameStr, Ok argsAsList ) ->
+        --                         unify u0 (Comp nameStr argsAsList) (Var v)
+        --                             |> Maybe.map (\u1 -> Seq.singleton (Ok u1))
+        --                             |> Maybe.withDefault Seq.empty
+        --                     _ ->
+        --                         Seq.singleton (Err (TypeError "Invalid arguments to =.." params))
+        --             -- `foo(Arg1, Arg2) =.. Whatever`
+        --             [ Comp name args, other ] ->
+        --                 unifying u0 other (toValList (Atom name :: args))
+        --             _ ->
+        --                 Seq.singleton (Err (TypeError "Invalid arguments to =.." params))
+        --   )
+        ]
+
+
+fromValList : Val -> Maybe (List Val)
+fromValList val =
+    case val of
+        Cons h t ->
+            fromValList t |> Maybe.map (\ts -> h :: ts)
+
+        Atom "[]" ->
+            Just []
+
+        _ ->
+            Nothing
