@@ -188,16 +188,30 @@ type alias SolnStream =
 
 solveGoal : Db -> USet -> Goal -> SolnStream
 solveGoal db u0 goal =
-    case goal of
+    case simplifyVal u0 goal of
         Comp predName args ->
-            case findMatchingClauses db u0 predName (dupList args) of
-                Err e ->
-                    Seq.singleton (Err e)
+            let
+                solveNonBuiltinGoal : () -> SolnStream
+                solveNonBuiltinGoal () =
+                    case findMatchingClauses db u0 predName (dupList args) of
+                        Err e ->
+                            Seq.singleton (Err e)
 
-                Ok clauseMatches ->
-                    clauseMatches
-                        |> Seq.fromList
-                        |> Seq.flatMap (\( u1, body ) -> solveQuery db u1 body)
+                        Ok clauseMatches ->
+                            clauseMatches
+                                |> Seq.fromList
+                                |> Seq.flatMap (\( u1, body ) -> solveQuery db u1 body)
+
+                solveBuiltinGoal : BuiltinImpl -> SolnStream
+                solveBuiltinGoal builtin =
+                    builtin db u0 args
+            in
+            case Dict.get predName builtins of
+                Just builtin ->
+                    solveBuiltinGoal builtin
+
+                Nothing ->
+                    solveNonBuiltinGoal ()
 
         _ ->
             Seq.singleton (Err (UncallableValue goal))
@@ -289,14 +303,28 @@ randomSolveGoal : Db -> USet -> Goal -> Random.Generator SolnStream
 randomSolveGoal db u0 goal =
     case goal of
         Comp predName args ->
-            case findMatchingClauses db u0 predName (dupList args) of
-                Err e ->
-                    Err e |> Seq.singleton |> Random.constant
+            let
+                randomSolveGoalNotBuiltin : () -> Random.Generator SolnStream
+                randomSolveGoalNotBuiltin () =
+                    case findMatchingClauses db u0 predName (dupList args) of
+                        Err e ->
+                            Err e |> Seq.singleton |> Random.constant
 
-                Ok clauseMatches ->
-                    clauseMatches
-                        |> Random.Extra.shuffled
-                        |> Random.andThen (tryClauses db)
+                        Ok clauseMatches ->
+                            clauseMatches
+                                |> Random.Extra.shuffled
+                                |> Random.andThen (tryClauses db)
+
+                randomSolveGoalBuiltin : BuiltinImpl -> Random.Generator SolnStream
+                randomSolveGoalBuiltin builtin =
+                    builtin db u0 args |> Random.constant
+            in
+            case Dict.get predName builtins of
+                Just builtin ->
+                    randomSolveGoalBuiltin builtin
+
+                Nothing ->
+                    randomSolveGoalNotBuiltin ()
 
         _ ->
             Err (UncallableValue goal) |> Seq.singleton |> Random.constant
@@ -356,7 +384,11 @@ unifying u x y =
             Seq.empty
 
 
-builtins : Dict.Dict String (Db -> USet -> Args -> SolnStream)
+type alias BuiltinImpl =
+    Db -> USet -> Args -> SolnStream
+
+
+builtins : Dict.Dict String BuiltinImpl
 builtins =
     Dict.fromList
         [ ( "clause_head_clause_body"
@@ -374,6 +406,28 @@ builtins =
                                         (\( u1, clauseBody ) ->
                                             unifying u1 body (toValList clauseBody)
                                         )
+
+                    [ Var v, body ] ->
+                        db.rules
+                            |> Dict.toList
+                            |> List.concatMap
+                                (\( predName, clauses ) ->
+                                    clauses |> List.map (\clause -> ( predName, clause.params, clause.body ))
+                                )
+                            |> Seq.fromList
+                            |> Seq.flatMap
+                                (\( predName, params2, clauseBody ) ->
+                                    unifying u0 (Comp predName params2) (Var v)
+                                        |> Seq.flatMap
+                                            (\res ->
+                                                case res of
+                                                    Err e ->
+                                                        Seq.singleton (Err e)
+
+                                                    Ok u1 ->
+                                                        unifying u1 body (toValList clauseBody)
+                                            )
+                                )
 
                     _ ->
                         Seq.singleton (Err (TypeError "Invalid arguments to clause_head_clause_body" params))
