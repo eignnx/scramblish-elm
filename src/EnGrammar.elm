@@ -2,7 +2,7 @@ module EnGrammar exposing (..)
 
 import Dict
 import Grammar exposing (Form(..), Grammar, Nt(..), Tm(..))
-import Logic as L
+import Logic.Types as T
 
 
 en : Grammar
@@ -44,34 +44,34 @@ en =
 -- LOGIC PROGRAM
 
 
-db : L.Db
+db : T.Db
 db =
     { rules =
         Dict.fromList
-            [ ( "=", [ { params = [ L.Var "X", L.Var "X" ], body = [] } ] )
+            [ ( "=", [ { params = [ T.Var "X", T.Var "X" ], body = [] } ] )
             , ( "append"
-              , [ { params = [ L.Atom "[]", L.Var "Y", L.Var "Y" ], body = [] }
-                , { params = [ L.Cons (L.Var "X") (L.Var "Xs"), L.Var "Ys", L.Cons (L.Var "X") (L.Var "Zs") ]
-                  , body = [ L.Comp "append" [ L.Var "Xs", L.Var "Ys", L.Var "Zs" ] ]
+              , [ { params = [ T.Atom "[]", T.Var "Y", T.Var "Y" ], body = [] }
+                , { params = [ T.Cons (T.Var "X") (T.Var "Xs"), T.Var "Ys", T.Cons (T.Var "X") (T.Var "Zs") ]
+                  , body = [ T.Comp "append" [ T.Var "Xs", T.Var "Ys", T.Var "Zs" ] ]
                   }
                 ]
               )
             , ( "-->"
-              , [ { params = [ L.Comp "sentence" [ L.Var "Before", L.Var "After" ] ]
+              , [ { params = [ T.Comp "sentence" [ T.Var "Before", T.Var "After" ] ]
                   , body =
-                        [ L.Comp "append"
-                            [ L.Var "Before"
-                            , L.toValList [ L.Text "the", L.Text "cat", L.Text "slept" ]
-                            , L.Var "After"
+                        [ T.Comp "append"
+                            [ T.Var "Before"
+                            , T.toValList [ T.Text "the", T.Text "cat", T.Text "slept" ]
+                            , T.Var "After"
                             ]
                         ]
                   }
                 ]
               )
             , ( "phrase"
-              , [ { params = [ L.Var "Rule", L.Var "Before", L.Var "After" ]
+              , [ { params = [ T.Var "Rule", T.Var "Before", T.Var "After" ]
                   , body =
-                        [ L.Comp "-->" [ L.Var "RuleHead" ]
+                        [ T.Comp "-->" [ T.Var "RuleHead" ]
 
                         -- TODO
                         ]

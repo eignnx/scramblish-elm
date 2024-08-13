@@ -7,7 +7,8 @@ import Grammar exposing (..)
 import Html exposing (Html, button, div, footer, h1, h3, header, hr, main_, section, text)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
-import Logic exposing (viewUSet)
+import Logic.Solve
+import Logic.Types as LTy
 import Mutation exposing (GrammarMut, mutateSyntaxTree)
 import Orthography exposing (chooseOrtho)
 import Platform.Cmd as Cmd exposing (Cmd)
@@ -81,7 +82,7 @@ type Msg
     | MutateEnGrammar
     | MutationCreated Mutation.GrammarMut
     | RandomSolve
-    | RandomSolution (Seq.Seq (Result Logic.SolveError Logic.USet))
+    | RandomSolution (Seq.Seq (Result LTy.SolveError LTy.USet))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -103,10 +104,10 @@ update msg model =
             ( model
             , Random.generate
                 RandomSolution
-                (Logic.randomSolveQuery
-                    Logic.exDb
-                    Logic.usetEmpty
-                    [ Logic.Comp "clause_head_clause_body" [ Logic.Var "Head", Logic.Var "Body" ] ]
+                (Logic.Solve.randomSolveQuery
+                    Logic.Solve.exDb
+                    LTy.usetEmpty
+                    [ LTy.Comp "clause_head_clause_body" [ LTy.Var "Head", LTy.Var "Body" ] ]
                 )
             )
 
