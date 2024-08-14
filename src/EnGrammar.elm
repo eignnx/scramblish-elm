@@ -44,39 +44,94 @@ en =
 -- LOGIC PROGRAM
 
 
-db : T.Db
-db =
+enDb : T.Db
+enDb =
     { rules =
         Dict.fromList
-            [ ( "=", [ { params = [ T.Var "X", T.Var "X" ], body = [] } ] )
-            , ( "append"
-              , [ { params = [ T.Atom "[]", T.Var "Y", T.Var "Y" ], body = [] }
-                , { params = [ T.Cons (T.Var "X") (T.Var "Xs"), T.Var "Ys", T.Cons (T.Var "X") (T.Var "Zs") ]
-                  , body = [ T.Comp "append" [ T.Var "Xs", T.Var "Ys", T.Var "Zs" ] ]
-                  }
-                ]
-              )
-            , ( "-->"
-              , [ { params = [ T.Comp "sentence" [ T.Var "Before", T.Var "After" ] ]
-                  , body =
-                        [ T.Comp "append"
-                            [ T.Var "Before"
-                            , T.toValList [ T.Text "the", T.Text "cat", T.Text "slept" ]
-                            , T.Var "After"
+            [ ( "rule"
+              , [ -- rule(sentence, [noun_phrase(G,N,P), verb_phrase(G,N,P)]).
+                  mkRule "sentence"
+                    [ { params = []
+                      , body =
+                            [ T.Comp "noun_phrase" [ T.Var "G", T.Var "N", T.Var "P" ]
+                            , T.Comp "verb_phrase" [ T.Var "G", T.Var "N", T.Var "P" ]
                             ]
-                        ]
-                  }
-                ]
-              )
-            , ( "phrase"
-              , [ { params = [ T.Var "Rule", T.Var "Before", T.Var "After" ]
-                  , body =
-                        [ T.Comp "-->" [ T.Var "RuleHead" ]
+                      }
+                    ]
+                , mkRule "they"
+                    [ -- rule(pronoun(Gender, sing, first), [['I']]).
+                      { params = [ T.Var "_G", T.Atom "sing", T.Atom "first" ]
+                      , body = [ atoms [ "I" ] ]
+                      }
 
-                        -- TODO
-                        ]
-                  }
+                    -- rule(pronoun(Gender, Number, second), [['you']]).
+                    , { params = [ T.Var "_G", T.Var "Number", T.Atom "second" ]
+                      , params = [ atoms [ "you" ] ]
+                      }
+
+                    -- rule(pronoun(masc, sing, third), [['he']]).
+                    , { params = [ T.Atom "masc", T.Atom "sing", T.Atom "third" ]
+                      , body = [ atoms [ "he" ] ]
+                      }
+
+                    -- rule(pronoun(femm, sing, third), [['she']]).
+                    , { params = [ T.Atom "femm", T.Atom "sing", T.Atom "third" ]
+                      , body = [ atoms [ "she" ] ]
+                      }
+
+                    -- rule(pronoun(nuet, sing, third), [['it']]).
+                    , { params = [ T.Atom "nuet", T.Atom "sing", T.Atom "third" ]
+                      , body = [ atoms [ "it" ] ]
+                      }
+
+                    -- rule(pronoun(enby, sing, third), [['they']]).
+                    , { params = [ T.Atom "enby", T.Atom "sing", T.Atom "third" ]
+                      , body = [ atoms [ "they" ] ]
+                      }
+
+                    -- rule(pronoun(Gender, plural, first), [['we']]).
+                    , { params = [ T.Var "_G", T.Atom "plural", T.Atom "first" ]
+                      , body = [ atoms [ "we" ] ]
+                      }
+
+                    -- rule(pronoun(Gender, plural, second), [['yall']]).
+                    , { params = [ T.Var "_G", T.Atom "plural", T.Atom "second" ]
+                      , body = [ atoms [ "y'all" ] ]
+                      }
+
+                    -- rule(pronoun(Gender, plural, second), [['you', 'all']]).
+                    , { params = [ T.Var "_G", T.Atom "plural", T.Atom "second" ]
+                      , body = [ atoms [ "you", "all" ] ]
+                      }
+
+                    -- rule(pronoun(Gender, plural, third), [['they']]).
+                    , { params = [ T.Var "_G", T.Atom "plural", T.Atom "third" ]
+                      , body = [ atoms [ "they" ] ]
+                      }
+                    ]
                 ]
               )
             ]
     }
+
+
+type alias RuleClause =
+    { params : T.Args
+    , body : T.Query
+    }
+
+
+mkRule : String -> List RuleClause -> List T.Clause
+mkRule ruleName argsQueries =
+    argsQueries
+        |> List.map
+            (\{ params, body } ->
+                { params = [ T.Comp ruleName params, T.toValList body ]
+                , body = []
+                }
+            )
+
+
+atoms : List String -> T.Val
+atoms =
+    List.map T.Atom >> T.toValList

@@ -80,3 +80,73 @@ builtins =
         --                 Seq.singleton (Err (TypeError "Invalid arguments to =.." params))
         --   )
         ]
+
+
+
+{-
+   phrase(Rule, After) :-
+       phrase(Rule, [], After).
+
+   phrase(Rule, Before, After) :-
+       rule(Rule, Body),
+       interpret_body_conjunction(Body, Before, After).
+
+   interpret_body_conjunction([], Before, Before).
+   interpret_body_conjunction([SubRule|SubRules], Before, After) :-
+       interpret_body(SubRule, Before, Middle),
+       interpret_body_conjunction(SubRules, Middle, After).
+
+   interpret_body([], Before, Before).
+   interpret_body([X|Xs], Before, After) :-
+       append(Before, [X|Xs], After).
+   interpret_body(NonTerminal, Before, After) :-
+       phrase(NonTerminal, Before, After).
+-}
+
+
+stdDb : Db
+stdDb =
+    { rules =
+        Dict.fromList
+            [ ( "phrase"
+              , [ { params = [ Var "Rule", Var "After" ]
+                  , body = [ Comp "phrase" [ Var "Rule", Atom "[]" ], Var "After" ]
+                  }
+                , { params = [ Var "Rule", Var "Before", Var "After" ]
+                  , body =
+                        [ Comp "rule" [ Var "Rule", Var "Body" ]
+                        , Comp "interpret_body_conjunction" [ Var "Body", Var "Before", Var "After" ]
+                        ]
+                  }
+                ]
+              )
+            , ( "interpret_body_conjunction"
+              , [ { params = [ Atom "[]", Var "Before", Var "Before" ], body = [] }
+                , { params = [ Cons (Var "SubRule") (Var "SubRules"), Var "Before", Var "After" ]
+                  , body =
+                        [ Comp "interpret_body" [ Var "SubRule", Var "Before", Var "Middle" ]
+                        , Comp "interpret_body_conjunction" [ Var "SubRules", Var "Middle", Var "After" ]
+                        ]
+                  }
+                ]
+              )
+            , ( "interpret_body"
+              , [ { params = [ Atom "[]", Var "Before", Var "Before" ], body = [] }
+                , { params = [ Cons (Var "X") (Var "Xs"), Var "Before", Var "After" ]
+                  , body = [ Comp "append" [ Var "Before", Cons (Var "X") (Var "Xs"), Var "After" ] ]
+                  }
+                , { params = [ Var "NonTerminal", Var "Before", Var "After" ]
+                  , body = [ Comp "phrase" [ Var "NonTerminal", Var "Before", Var "After" ] ]
+                  }
+                ]
+              )
+            , ( "=", [ { params = [ Var "X", Var "X" ], body = [] } ] )
+            , ( "append"
+              , [ { params = [ Atom "[]", Var "Y", Var "Y" ], body = [] }
+                , { params = [ Cons (Var "X") (Var "Xs"), Var "Ys", Cons (Var "X") (Var "Zs") ]
+                  , body = [ Comp "append" [ Var "Xs", Var "Ys", Var "Zs" ] ]
+                  }
+                ]
+              )
+            ]
+    }
