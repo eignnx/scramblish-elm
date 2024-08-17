@@ -7,7 +7,8 @@ import Grammar exposing (..)
 import Html exposing (Html, button, div, footer, h1, h3, header, hr, main_, section, text)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
-import Logic.Solve
+import Logic.Builtins
+import Logic.Solve.Randomized
 import Logic.Types as LTy
 import Mutation exposing (GrammarMut, mutateSyntaxTree)
 import Orthography exposing (chooseOrtho)
@@ -38,7 +39,7 @@ main =
 type alias Model =
     { examples : List SyntaxTree
     , scramblishGrammar : GrammarMut
-    , querySolns : String
+    , querySoln : Maybe (Result LTy.SolveError LTy.USet)
     }
 
 
@@ -52,7 +53,7 @@ init _ =
             , wordMapping = Dict.empty
             , orthography = Orthography.romanOrthography
             }
-      , querySolns = "<no solutions yet>"
+      , querySoln = Nothing
       }
     , Cmd.batch
         [ generateScramblishGrammar
@@ -82,7 +83,7 @@ type Msg
     | MutateEnGrammar
     | MutationCreated Mutation.GrammarMut
     | RandomSolve
-    | RandomSolution (Seq.Seq (Result LTy.SolveError LTy.USet))
+    | RandomSolution LTy.SolnStream
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -104,23 +105,46 @@ update msg model =
             ( model
             , Random.generate
                 RandomSolution
-                (Logic.Solve.randomSolveQuery
-                    Logic.Solve.exDb
+                (Logic.Solve.Randomized.solveQuery
+                    (LTy.dbMerge Logic.Builtins.stdDb Logic.Builtins.stdDb)
+                    LTy.emptyDupSubst
                     LTy.usetEmpty
-                    [ LTy.Comp "clause_head_clause_body" [ LTy.Var "Head", LTy.Var "Body" ] ]
+                    [ LTy.Comp "=" [ LTy.Var "X", LTy.Atom "asdf" ]
+                    , LTy.Comp "=" [ LTy.Var "Y", LTy.Var "X" ]
+                    ]
+                 -- [ LTy.Comp "append"
+                 --     [ LTy.toValList [ LTy.Atom "a", LTy.Atom "b" ]
+                 --     , LTy.toValList [ LTy.Atom "c", LTy.Atom "d", LTy.Atom "e" ]
+                 --     , LTy.Var "What"
+                 --     ]
+                 -- ]
+                 -- [ LTy.Comp "phrase"
+                 --     [ LTy.toValList [ LTy.Atom "x", LTy.Atom "y" ]
+                 -- LTy.Comp "they"
+                 -- [ LTy.Atom "femm"
+                 -- , LTy.Atom "sing"
+                 -- , LTy.Atom "third"
+                 -- ]
+                 -- [ LTy.Var "G"
+                 -- , LTy.Atom "N"
+                 -- , LTy.Atom "P"
+                 -- ]
+                 -- , LTy.Var "Production"
+                 -- ]
+                 -- ]
                 )
             )
 
         RandomSolution solns ->
             case Seq.next solns of
                 Seq.Nil ->
-                    ( { model | querySolns = "No solution." }, Cmd.none )
+                    ( { model | querySoln = Nothing }, Cmd.none )
 
-                Seq.Cons (Ok u) _ ->
-                    ( { model | querySolns = Debug.toString u }, Cmd.none )
+                Seq.Cons (Ok ( dup, u )) _ ->
+                    ( { model | querySoln = Just (Ok u) }, Cmd.none )
 
                 Seq.Cons (Err e) _ ->
-                    ( { model | querySolns = "Error: " ++ Debug.toString e }, Cmd.none )
+                    ( { model | querySoln = Just (Err e) }, Cmd.none )
 
 
 randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg
@@ -160,9 +184,19 @@ view model =
                     ++ [ button [ onClick AddExample ] [ text "+ Additional Example" ] ]
                 )
             , section [ class "container" ]
-                [ button [ onClick RandomSolve ] [ text "Random Solve Query" ]
-                , text model.querySolns
-                ]
+                ([ button [ onClick RandomSolve ] [ text "Random Solve Query" ]
+                 ]
+                    ++ (case model.querySoln of
+                            Nothing ->
+                                [ text "No query results yet." ]
+
+                            Just (Ok u) ->
+                                [ text "Query succeeded: ", viewUSet u ]
+
+                            Just (Err e) ->
+                                [ text ("Query failed: " ++ Debug.toString e) ]
+                       )
+                )
 
             -- [ Logic.solveQuery
             --     Logic.exDb
@@ -193,6 +227,25 @@ view model =
         , footer []
             [ text "© 2024" ]
         ]
+
+
+viewUSet : LTy.USet -> Html msg
+viewUSet u =
+    -- Skip over variables that contain '#' (internal variables).
+    u
+        |> Dict.filter (\k _ -> not <| String.contains "#" k)
+        |> Dict.foldl
+            (\k v acc ->
+                acc
+                    ++ [ div []
+                            [ text k
+                            , text " -> "
+                            , text (Debug.toString v)
+                            ]
+                       ]
+            )
+            []
+        |> div []
 
 
 sentenceExampleView : GrammarMut -> Int -> SyntaxTree -> Html msg

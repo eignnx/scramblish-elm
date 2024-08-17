@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import Html
 import List.Extra
 import Maybe.Extra
+import Random
 import Seq
 import Utils
 
@@ -90,22 +91,38 @@ type alias Db =
     }
 
 
+dbMerge : Db -> Db -> Db
+dbMerge db1 db2 =
+    { rules = Dict.union db1.rules db2.rules }
+
+
 getClauses : Db -> String -> Result SolveError (List Clause)
 getClauses db predName =
     Dict.get predName db.rules
         |> Result.fromMaybe (UndefinedPredicate predName)
 
 
-findMatchingClauses : Db -> USet -> String -> Args -> Result SolveError (List ( USet, Query ))
-findMatchingClauses db u0 predName argsDup =
+findMatchingClauses : Db -> DupSubst -> USet -> String -> Args -> Result SolveError (List ( DupSubst, USet, Query ))
+findMatchingClauses db dup0 u0 predName args =
     getClauses db predName
         |> Result.map
             (\clauses ->
                 clauses
                     |> List.filterMap
                         (\clause ->
-                            unifyList u0 argsDup clause.params
-                                |> Maybe.map (\u1 -> ( u1, clause.body ))
+                            -- Duplicate the clause's parameters and body so
+                            -- that the variables in the source code are
+                            -- never accessable to other parts of the Prolog
+                            -- program.
+                            let
+                                ( dup1, clauseParamsDuped ) =
+                                    dupList dup0 clause.params
+
+                                ( dup2, clauseBodyDuped ) =
+                                    dupList dup1 clause.body
+                            in
+                            unifyList u0 args clauseParamsDuped
+                                |> Maybe.map (\u1 -> ( dup2, u1, clauseBodyDuped ))
                         )
             )
 
@@ -212,6 +229,92 @@ viewUSet u =
 
 
 
+-- DUP SUBST
+
+
+{-| Variable-duplication substitution map.
+-}
+type alias DupSubst =
+    { mapping : Dict.Dict String String
+    , counter : Int
+    }
+
+
+emptyDupSubst : DupSubst
+emptyDupSubst =
+    { mapping = Dict.empty
+    , counter = 2
+    }
+
+
+dupList : DupSubst -> List Val -> ( DupSubst, List Val )
+dupList dup list =
+    case list of
+        [] ->
+            ( dup, [] )
+
+        x :: xs ->
+            let
+                ( dup1, x1 ) =
+                    dupVal dup x
+
+                ( dup2, xs2 ) =
+                    dupList dup1 xs
+            in
+            ( dup2, x1 :: xs2 )
+
+
+dupVal : DupSubst -> Val -> ( DupSubst, Val )
+dupVal dup val =
+    case val of
+        Atom _ ->
+            ( dup, val )
+
+        Text _ ->
+            ( dup, val )
+
+        Var name ->
+            dupVar dup name
+
+        Cons h t ->
+            let
+                ( dup1, h1 ) =
+                    dupVal dup h
+
+                ( dup2, t2 ) =
+                    dupVal dup1 t
+            in
+            ( dup2, Cons h1 t2 )
+
+        Comp name args ->
+            let
+                ( dup1, args1 ) =
+                    dupList dup args
+            in
+            ( dup1, Comp name args1 )
+
+
+dupVar : DupSubst -> String -> ( DupSubst, Val )
+dupVar dup name =
+    case Dict.get name dup.mapping of
+        Just name1 ->
+            ( dup, Var name1 )
+
+        Nothing ->
+            let
+                name1 =
+                    name ++ "#" ++ String.fromInt dup.counter
+
+                dup1 =
+                    { dup
+                        | counter = dup.counter + 1
+                        , mapping = Dict.insert name name1 dup.mapping
+                    }
+            in
+            ( dup1, Var name1 )
+
+
+
 -- SOLVE ERROR
 
 
@@ -227,14 +330,14 @@ type SolveError
 
 
 type alias SolnStream =
-    Seq.Seq (Result SolveError USet)
+    Seq.Seq (Result SolveError ( DupSubst, USet ))
 
 
-unifying : USet -> Val -> Val -> SolnStream
-unifying u x y =
+unifying : DupSubst -> USet -> Val -> Val -> SolnStream
+unifying dup u x y =
     case unify u x y of
         Just u1 ->
-            Seq.singleton (Ok u1)
+            Seq.singleton (Ok ( dup, u1 ))
 
         Nothing ->
             Seq.empty
@@ -245,4 +348,8 @@ unifying u x y =
 
 
 type alias BuiltinImpl =
-    Db -> USet -> Args -> SolnStream
+    Db -> DupSubst -> USet -> Args -> SolnStream
+
+
+type alias BuiltinImplRandom =
+    Db -> DupSubst -> USet -> Args -> Random.Generator SolnStream
