@@ -4,7 +4,7 @@ import Browser
 import Dict
 import EnGrammar exposing (..)
 import Grammar exposing (..)
-import Html exposing (Html, button, div, footer, h1, h3, header, hr, main_, section, text)
+import Html exposing (Html, button, div, footer, h1, h3, header, main_, section, text)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
 import Logic.Builtins
@@ -109,15 +109,18 @@ update msg model =
                     (LTy.dbMerge Logic.Builtins.stdDb Logic.Builtins.stdDb)
                     LTy.emptyDupSubst
                     LTy.usetEmpty
-                    [ LTy.Comp "=" [ LTy.Var "X", LTy.Atom "asdf" ]
-                    , LTy.Comp "=" [ LTy.Var "Y", LTy.Var "X" ]
+                    ------
+                    -- [ LTy.Comp "=" [ LTy.Var "X", LTy.Atom "asdf" ]
+                    -- , LTy.Comp "=" [ LTy.Var "Y", LTy.Var "X" ]
+                    -- ]
+                    ------
+                    [ LTy.Comp "append"
+                        [ LTy.toValList [ LTy.Atom "a", LTy.Atom "b" ]
+                        , LTy.toValList [ LTy.Atom "c", LTy.Atom "d", LTy.Atom "e" ]
+                        , LTy.Var "What"
+                        ]
                     ]
-                 -- [ LTy.Comp "append"
-                 --     [ LTy.toValList [ LTy.Atom "a", LTy.Atom "b" ]
-                 --     , LTy.toValList [ LTy.Atom "c", LTy.Atom "d", LTy.Atom "e" ]
-                 --     , LTy.Var "What"
-                 --     ]
-                 -- ]
+                 ------
                  -- [ LTy.Comp "phrase"
                  --     [ LTy.toValList [ LTy.Atom "x", LTy.Atom "y" ]
                  -- LTy.Comp "they"
@@ -140,7 +143,7 @@ update msg model =
                 Seq.Nil ->
                     ( { model | querySoln = Nothing }, Cmd.none )
 
-                Seq.Cons (Ok ( dup, u )) _ ->
+                Seq.Cons (Ok ( _, u )) _ ->
                     ( { model | querySoln = Just (Ok u) }, Cmd.none )
 
                 Seq.Cons (Err e) _ ->
@@ -234,14 +237,14 @@ viewUSet u =
     u
         |> LTy.simplifyUSet
         -- Skip over variables that contain '#' (internal variables).
-        |> Dict.filter (\k _ -> String.contains "#" k |> not)
+        -- |> Dict.filter (\k _ -> String.contains "#" k |> not)
         |> Dict.foldl
             (\varName value acc ->
                 acc
                     ++ [ div []
                             [ text varName
                             , text " = "
-                            , text (Debug.toString value)
+                            , text (LTy.stringOfVal value)
                             ]
                        ]
             )

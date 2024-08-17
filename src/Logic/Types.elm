@@ -6,7 +6,6 @@ import List.Extra
 import Maybe.Extra
 import Random
 import Seq
-import Utils
 
 
 type Val
@@ -58,6 +57,23 @@ fromValList val =
 
         _ ->
             Nothing
+
+
+tryFromValList : Val -> { init : List Val, tail : Maybe Val }
+tryFromValList val =
+    case val of
+        Cons head tail ->
+            let
+                res =
+                    tryFromValList tail
+            in
+            { init = head :: res.init, tail = res.tail }
+
+        Atom "[]" ->
+            { init = [], tail = Nothing }
+
+        _ ->
+            { init = [], tail = Just val }
 
 
 type alias Goal =
@@ -358,3 +374,32 @@ type alias BuiltinImpl =
 
 type alias BuiltinImplRandom =
     Db -> DupSubst -> USet -> Args -> Random.Generator SolnStream
+
+
+stringOfVal : Val -> String
+stringOfVal val =
+    case val of
+        Var name ->
+            name
+
+        Atom "[]" ->
+            "[]"
+
+        Atom text ->
+            "'" ++ text ++ "'"
+
+        Text text ->
+            "\"" ++ text ++ "\""
+
+        Cons _ _ ->
+            let
+                res =
+                    tryFromValList val
+            in
+            "["
+                ++ String.join ", " (List.map stringOfVal res.init)
+                ++ (Maybe.map (\rem -> " | " ++ stringOfVal rem) res.tail |> Maybe.withDefault "")
+                ++ "]"
+
+        Comp functor args ->
+            functor ++ "(" ++ String.join ", " (List.map stringOfVal args) ++ ")"
