@@ -91,15 +91,13 @@ solveGoal db dup0 u0 goal =
     case goal of
         Comp predName args ->
             let
-                ( dup1, argsDuped ) =
-                    dupList dup0 args
+                argsSimplified : Args
+                argsSimplified =
+                    args |> List.map (simplifyVal u0)
 
-                ------ TODO:
-                -- * Duplicate the CLAUSE and CLAUSE HEAD, not the ARGS.
-                -- * Unify the ARGS with the duplicated CLAUSE HEAD ARGS.
                 solveGoalNotBuiltin : () -> Random.Generator SolnStream
                 solveGoalNotBuiltin () =
-                    case findMatchingClauses db dup1 u0 predName argsDuped of
+                    case findMatchingClauses db dup0 u0 predName argsSimplified of
                         Err e ->
                             Err e |> Seq.singleton |> Random.constant
 
@@ -110,7 +108,7 @@ solveGoal db dup0 u0 goal =
 
                 solveGoalBuiltin : Logic.Types.BuiltinImplRandom -> Random.Generator SolnStream
                 solveGoalBuiltin builtin =
-                    builtin db dup1 u0 argsDuped
+                    builtin db dup0 u0 argsSimplified
             in
             case Dict.get predName Logic.Builtins.builtinsRandom of
                 Just builtin ->

@@ -231,16 +231,17 @@ view model =
 
 viewUSet : LTy.USet -> Html msg
 viewUSet u =
-    -- Skip over variables that contain '#' (internal variables).
     u
-        |> Dict.filter (\k _ -> not <| String.contains "#" k)
+        |> LTy.simplifyUSet
+        -- Skip over variables that contain '#' (internal variables).
+        |> Dict.filter (\k _ -> String.contains "#" k |> not)
         |> Dict.foldl
-            (\k v acc ->
+            (\varName value acc ->
                 acc
                     ++ [ div []
-                            [ text k
-                            , text " -> "
-                            , text (Debug.toString v)
+                            [ text varName
+                            , text " = "
+                            , text (Debug.toString value)
                             ]
                        ]
             )

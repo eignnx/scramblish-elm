@@ -207,6 +207,11 @@ simplifyVal u val =
             val
 
 
+simplifyUSet : USet -> USet
+simplifyUSet u =
+    u |> Dict.map (\_ v -> simplifyVal u v)
+
+
 viewUSet : USet -> Html.Html a
 viewUSet u =
     u
