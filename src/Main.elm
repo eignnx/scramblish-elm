@@ -114,27 +114,29 @@ update msg model =
                     -- , LTy.Comp "=" [ LTy.Var "Y", LTy.Var "X" ]
                     -- ]
                     ------
-                    [ LTy.Comp "append"
-                        [ LTy.toValList [ LTy.Atom "a", LTy.Atom "b" ]
-                        , LTy.toValList [ LTy.Atom "c", LTy.Atom "d", LTy.Atom "e" ]
-                        , LTy.Var "What"
+                    -- [ LTy.Comp "append"
+                    --     [ LTy.toValList [ LTy.Atom "a" ]
+                    --     , LTy.toValList [ LTy.Atom "b", LTy.Atom "c" ]
+                    --     , LTy.Var "What"
+                    --     ]
+                    -- ]
+                    ------
+                    [ LTy.Comp "phrase"
+                        -- [ LTy.toValList [ LTy.Atom "x", LTy.Atom "y" ] ]
+                        [ LTy.Comp
+                            "they"
+                            [ LTy.Atom "femm"
+                            , LTy.Atom "sing"
+                            , LTy.Atom "third"
+                            ]
+
+                        -- [ LTy.Var "G"
+                        -- , LTy.Atom "N"
+                        -- , LTy.Atom "P"
+                        -- ]
+                        , LTy.Var "Production"
                         ]
                     ]
-                 ------
-                 -- [ LTy.Comp "phrase"
-                 --     [ LTy.toValList [ LTy.Atom "x", LTy.Atom "y" ]
-                 -- LTy.Comp "they"
-                 -- [ LTy.Atom "femm"
-                 -- , LTy.Atom "sing"
-                 -- , LTy.Atom "third"
-                 -- ]
-                 -- [ LTy.Var "G"
-                 -- , LTy.Atom "N"
-                 -- , LTy.Atom "P"
-                 -- ]
-                 -- , LTy.Var "Production"
-                 -- ]
-                 -- ]
                 )
             )
 

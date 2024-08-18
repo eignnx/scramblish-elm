@@ -140,7 +140,15 @@ stdDb : Db
 stdDb =
     { rules =
         Dict.fromList
-            [ ( "phrase"
+            [ ( "=", [ { params = [ Var "X", Var "X" ], body = [] } ] )
+            , ( "append"
+              , [ { params = [ Atom "[]", Var "Y", Var "Y" ], body = [] }
+                , { params = [ Cons (Var "X") (Var "Xs"), Var "Ys", Cons (Var "X") (Var "Zs") ]
+                  , body = [ Comp "append" [ Var "Xs", Var "Ys", Var "Zs" ] ]
+                  }
+                ]
+              )
+            , ( "phrase"
               , [ { params = [ Var "Rule", Var "After" ]
                   , body = [ Comp "phrase" [ Var "Rule", Atom "[]" ], Var "After" ]
                   }
@@ -169,14 +177,6 @@ stdDb =
                   }
                 , { params = [ Var "NonTerminal", Var "Before", Var "After" ]
                   , body = [ Comp "phrase" [ Var "NonTerminal", Var "Before", Var "After" ] ]
-                  }
-                ]
-              )
-            , ( "=", [ { params = [ Var "X", Var "X" ], body = [] } ] )
-            , ( "append"
-              , [ { params = [ Atom "[]", Var "Y", Var "Y" ], body = [] }
-                , { params = [ Cons (Var "X") (Var "Xs"), Var "Ys", Cons (Var "X") (Var "Zs") ]
-                  , body = [ Comp "append" [ Var "Xs", Var "Ys", Var "Zs" ] ]
                   }
                 ]
               )

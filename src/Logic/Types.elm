@@ -206,8 +206,23 @@ unifyList u0 xs ys =
 
 
 usetLookup : USet -> String -> Maybe Val
-usetLookup u v1 =
-    Dict.get v1 u |> Maybe.andThen (mapVarMaybe (usetLookup u))
+usetLookup u var1 =
+    -- Dict.get var1 u |> Maybe.andThen (mapVarMaybe (usetLookup u))
+    case Dict.get var1 u of
+        Nothing ->
+            Nothing
+
+        Just val1 ->
+            case val1 of
+                Var var2 ->
+                    if var1 /= var2 then
+                        usetLookup u var2
+
+                    else
+                        Just (Var var1)
+
+                _ ->
+                    Just val1
 
 
 simplifyVal : USet -> Val -> Val
@@ -219,8 +234,14 @@ simplifyVal u val =
         Comp name args ->
             Comp name (args |> List.map (simplifyVal u))
 
-        _ ->
-            val
+        Cons head tail ->
+            Cons (simplifyVal u head) (simplifyVal u tail)
+
+        Atom text ->
+            Atom text
+
+        Text text ->
+            Text text
 
 
 simplifyUSet : USet -> USet
