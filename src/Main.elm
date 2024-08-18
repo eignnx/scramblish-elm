@@ -9,7 +9,7 @@ import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
 import Logic.Builtins
 import Logic.Solve.Randomized
-import Logic.Types as LTy
+import Logic.Types as T
 import Mutation exposing (GrammarMut, mutateSyntaxTree)
 import Orthography exposing (chooseOrtho)
 import Platform.Cmd as Cmd exposing (Cmd)
@@ -39,7 +39,7 @@ main =
 type alias Model =
     { examples : List SyntaxTree
     , scramblishGrammar : GrammarMut
-    , querySoln : Maybe (Result LTy.SolveError LTy.USet)
+    , querySoln : Maybe (Result T.SolveError T.USet)
     }
 
 
@@ -83,7 +83,7 @@ type Msg
     | MutateEnGrammar
     | MutationCreated Mutation.GrammarMut
     | RandomSolve
-    | RandomSolution LTy.SolnStream
+    | RandomSolution T.SolnStream
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -106,35 +106,35 @@ update msg model =
             , Random.generate
                 RandomSolution
                 (Logic.Solve.Randomized.solveQuery
-                    (LTy.dbMerge Logic.Builtins.stdDb Logic.Builtins.stdDb)
-                    LTy.emptyDupSubst
-                    LTy.usetEmpty
+                    (T.dbMerge Logic.Builtins.stdDb Logic.Builtins.stdDb)
+                    T.emptyDupSubst
+                    T.usetEmpty
                     ------
-                    -- [ LTy.Comp "=" [ LTy.Var "X", LTy.Atom "asdf" ]
-                    -- , LTy.Comp "=" [ LTy.Var "Y", LTy.Var "X" ]
+                    -- [ T.Comp "=" [ T.Var "X", T.Atom "asdf" ]
+                    -- , T.Comp "=" [ T.Var "Y", T.Var "X" ]
                     -- ]
                     ------
-                    -- [ LTy.Comp "append"
-                    --     [ LTy.toValList [ LTy.Atom "a" ]
-                    --     , LTy.toValList [ LTy.Atom "b", LTy.Atom "c" ]
-                    --     , LTy.Var "What"
+                    -- [ T.Comp "append"
+                    --     [ T.toValList [ T.Atom "a" ]
+                    --     , T.toValList [ T.Atom "b", T.Atom "c" ]
+                    --     , T.Var "What"
                     --     ]
                     -- ]
                     ------
-                    [ LTy.Comp "phrase"
-                        -- [ LTy.toValList [ LTy.Atom "x", LTy.Atom "y" ] ]
-                        [ LTy.Comp
+                    [ T.Comp "phrase"
+                        -- [ T.toValList [ T.Atom "x", T.Atom "y" ] ]
+                        [ T.Comp
                             "they"
-                            [ LTy.Atom "femm"
-                            , LTy.Atom "sing"
-                            , LTy.Atom "third"
+                            [ T.Atom "femm"
+                            , T.Atom "sing"
+                            , T.Atom "third"
                             ]
 
-                        -- [ LTy.Var "G"
-                        -- , LTy.Atom "N"
-                        -- , LTy.Atom "P"
+                        -- [ T.Var "G"
+                        -- , T.Atom "N"
+                        -- , T.Atom "P"
                         -- ]
-                        , LTy.Var "Production"
+                        , T.Var "Production"
                         ]
                     ]
                 )
@@ -234,10 +234,10 @@ view model =
         ]
 
 
-viewUSet : LTy.USet -> Html msg
+viewUSet : T.USet -> Html msg
 viewUSet u =
     u
-        |> LTy.simplifyUSet
+        |> T.simplifyUSet
         -- Skip over variables that contain '#' (internal variables).
         -- |> Dict.filter (\k _ -> String.contains "#" k |> not)
         |> Dict.foldl
@@ -246,7 +246,7 @@ viewUSet u =
                     ++ [ div []
                             [ text varName
                             , text " = "
-                            , text (LTy.stringOfVal value)
+                            , text (T.stringOfVal value)
                             ]
                        ]
             )
