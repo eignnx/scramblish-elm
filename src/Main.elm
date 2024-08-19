@@ -221,10 +221,10 @@ view model =
                 )
             , details [ attribute "open" "true" ]
                 [ summary [] [ text "Word Generation" ]
-                , p [] (model.sampleSyllables |> List.map (\s -> span [ class "sample-syllable" ] [ text s ]))
-                , button [ onClick RandomSyllables ] [ text "Random Syllables" ]
                 , button [ onClick RandomizeWordGenLanguage ] [ text "⟳ Regenerate WordGen Language" ]
                 , W.viewLanguage model.wordGenLanguage
+                , button [ onClick RandomSyllables ] [ text "Random Syllables" ]
+                , p [] (model.sampleSyllables |> List.map (\s -> span [ class "sample-syllable" ] [ text s ]))
                 ]
             , details [ attribute "open" "true" ]
                 (summary [] [ text "Query Tests" ]

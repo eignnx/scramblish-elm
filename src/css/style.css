@@ -252,6 +252,7 @@ section {
 
 .sample-syllable {
     padding-inline: 0.25rem;
+    font-size: larger;
 }
 
 .sample-syllable::before,

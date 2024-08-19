@@ -98,11 +98,17 @@ choice default choices =
 subsetMinMax : Int -> Int -> List a -> Random.Generator (List a)
 subsetMinMax minLen maxLen list =
     Random.int minLen maxLen
-        |> Random.andThen
-            (\n ->
-                shuffled list
-                    |> Random.map (List.take n)
-            )
+        |> Random.andThen (\n -> shuffled list |> Random.map (List.take n))
+
+
+subsetMin : Int -> List a -> Random.Generator (List a)
+subsetMin minLen list =
+    let
+        len =
+            List.length list
+    in
+    Random.int (min minLen len) len
+        |> Random.andThen (\n -> shuffled list |> Random.map (List.take n))
 
 
 subsetN : Int -> List a -> Random.Generator (List a)

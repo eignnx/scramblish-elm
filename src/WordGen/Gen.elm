@@ -1,5 +1,9 @@
 module WordGen.Gen exposing (..)
 
+{-| Ideas taken almost entirely from [_Generating naming languages_](https://mewo2.com/notes/naming-language/)
+by Martin O'Leary.
+-}
+
 import Html exposing (Html, div, li, text, ul)
 import Html.Attributes exposing (class)
 import Random as R
@@ -222,10 +226,10 @@ randomLanguage : R.Generator Language
 randomLanguage =
     let
         consonantsR =
-            RX.subset allConsonants
+            RX.subsetMin 4 allConsonants
 
         vowelsR =
-            RX.subset allVowels
+            RX.subsetMin 1 allVowels
 
         sibilantsR =
             RX.choice [] sibilantSets
