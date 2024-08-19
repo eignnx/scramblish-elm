@@ -2,8 +2,8 @@ module WordGen.Gen exposing (..)
 
 import Html exposing (Html, div, li, text, ul)
 import Html.Attributes exposing (class)
-import Random
-import Random.Extra
+import Random as R
+import Random.Extra as RX
 
 
 allConsonants =
@@ -125,45 +125,45 @@ defaultLanguage =
     }
 
 
-choiceFromLetterClass : Language -> LetterClass -> Random.Generator (Maybe Char)
+choiceFromLetterClass : Language -> LetterClass -> R.Generator (Maybe Char)
 choiceFromLetterClass lang class =
     case class of
         C ->
-            Random.Extra.choice '￼' lang.consonants |> Random.map Just
+            RX.choice '￼' lang.consonants |> R.map Just
 
         V ->
-            Random.Extra.choice '￼' lang.vowels |> Random.map Just
+            RX.choice '￼' lang.vowels |> R.map Just
 
         S ->
-            Random.Extra.choice '￼' lang.sibilants |> Random.map Just
+            RX.choice '￼' lang.sibilants |> R.map Just
 
         L ->
-            Random.Extra.choice '￼' lang.liquids |> Random.map Just
+            RX.choice '￼' lang.liquids |> R.map Just
 
         F ->
-            Random.Extra.choice '￼' lang.finals |> Random.map Just
+            RX.choice '￼' lang.finals |> R.map Just
 
         Opt c ->
-            Random.Extra.chance 0.5
-                |> Random.andThen
+            RX.chance 0.5
+                |> R.andThen
                     (\b ->
                         if b then
                             choiceFromLetterClass lang c
 
                         else
-                            Random.constant Nothing
+                            R.constant Nothing
                     )
 
 
-randomSyllable : Language -> Random.Generator String
+randomSyllable : Language -> R.Generator String
 randomSyllable lang =
-    Random.Extra.choice [ C, C, C, C, C, C ] lang.syllableTemplates
-        |> Random.andThen
+    RX.choice [ C, C, C, C, C, C ] lang.syllableTemplates
+        |> R.andThen
             (\template ->
                 template
-                    |> Random.Extra.flattenList (choiceFromLetterClass lang)
-                    |> Random.map (\cs -> List.filterMap identity cs)
-                    |> Random.map String.fromList
+                    |> RX.flattenList (choiceFromLetterClass lang)
+                    |> R.map (\cs -> List.filterMap identity cs)
+                    |> R.map String.fromList
             )
 
 
@@ -218,42 +218,42 @@ stringFromLetterClass c =
             "[" ++ stringFromLetterClass inner ++ "]"
 
 
-randomLanguage : Random.Generator Language
+randomLanguage : R.Generator Language
 randomLanguage =
     let
         consonantsR =
-            Random.Extra.subset allConsonants
+            RX.subset allConsonants
 
         vowelsR =
-            Random.Extra.subset allVowels
+            RX.subset allVowels
 
         sibilantsR =
-            Random.Extra.choice [] sibilantSets
+            RX.choice [] sibilantSets
 
         liquidsR =
-            Random.Extra.choice [] liquidSets
+            RX.choice [] liquidSets
 
         finalsR =
-            Random.Extra.choice [] finalSets
+            RX.choice [] finalSets
 
         syllableTemplatesR =
-            Random.float 0 1
-                |> Random.andThen
+            R.float 0 1
+                |> R.andThen
                     (\percent ->
                         let
                             nTemplates =
                                 1 + floor (percent * percent * percent * toFloat maxSyllableTemplates)
                         in
-                        Random.Extra.subsetN nTemplates syllableStructureTemplates
+                        RX.subsetN nTemplates syllableStructureTemplates
                     )
     in
     consonantsR
-        |> Random.Extra.mapPair vowelsR
-        |> Random.Extra.mapPair sibilantsR
-        |> Random.Extra.mapPair liquidsR
-        |> Random.Extra.mapPair finalsR
-        |> Random.Extra.mapPair syllableTemplatesR
-        |> Random.map
+        |> RX.mapPair vowelsR
+        |> RX.mapPair sibilantsR
+        |> RX.mapPair liquidsR
+        |> RX.mapPair finalsR
+        |> RX.mapPair syllableTemplatesR
+        |> R.map
             (\( ( ( ( ( consonants, vowels ), sibilants ), liquids ), finals ), syllableTemplates ) ->
                 { consonants = consonants
                 , vowels = vowels
