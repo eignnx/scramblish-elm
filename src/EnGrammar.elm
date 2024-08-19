@@ -60,52 +60,52 @@ enDb =
                           }
                         ]
                     , mkRule "they"
-                        [ -- rule(pronoun(Gender, sing, first), [['I']]).
+                        [ -- rule(they(Gender, sing, first), [['I']]).
                           { params = [ T.Var "_G", T.Atom "sing", T.Atom "first" ]
                           , body = [ atoms [ "I" ] ]
                           }
 
-                        -- rule(pronoun(Gender, Number, second), [['you']]).
+                        -- rule(they(Gender, Number, second), [['you']]).
                         , { params = [ T.Var "_G", T.Var "Number", T.Atom "second" ]
                           , body = [ atoms [ "you" ] ]
                           }
 
-                        -- rule(pronoun(masc, sing, third), [['he']]).
+                        -- rule(they(masc, sing, third), [['he']]).
                         , { params = [ T.Atom "masc", T.Atom "sing", T.Atom "third" ]
                           , body = [ atoms [ "he" ] ]
                           }
 
-                        -- rule(pronoun(femm, sing, third), [['she']]).
+                        -- rule(they(femm, sing, third), [['she']]).
                         , { params = [ T.Atom "femm", T.Atom "sing", T.Atom "third" ]
                           , body = [ atoms [ "she" ] ]
                           }
 
-                        -- rule(pronoun(nuet, sing, third), [['it']]).
+                        -- rule(they(nuet, sing, third), [['it']]).
                         , { params = [ T.Atom "nuet", T.Atom "sing", T.Atom "third" ]
                           , body = [ atoms [ "it" ] ]
                           }
 
-                        -- rule(pronoun(enby, sing, third), [['they']]).
+                        -- rule(they(enby, sing, third), [['they']]).
                         , { params = [ T.Atom "enby", T.Atom "sing", T.Atom "third" ]
                           , body = [ atoms [ "they" ] ]
                           }
 
-                        -- rule(pronoun(Gender, plural, first), [['we']]).
+                        -- rule(they(Gender, plural, first), [['we']]).
                         , { params = [ T.Var "_G", T.Atom "plural", T.Atom "first" ]
                           , body = [ atoms [ "we" ] ]
                           }
 
-                        -- rule(pronoun(Gender, plural, second), [['yall']]).
+                        -- rule(they(Gender, plural, second), [['yall']]).
                         , { params = [ T.Var "_G", T.Atom "plural", T.Atom "second" ]
                           , body = [ atoms [ "y'all" ] ]
                           }
 
-                        -- rule(pronoun(Gender, plural, second), [['you', 'all']]).
+                        -- rule(they(Gender, plural, second), [['you', 'all']]).
                         , { params = [ T.Var "_G", T.Atom "plural", T.Atom "second" ]
                           , body = [ atoms [ "you", "all" ] ]
                           }
 
-                        -- rule(pronoun(Gender, plural, third), [['they']]).
+                        -- rule(they(Gender, plural, third), [['they']]).
                         , { params = [ T.Var "_G", T.Atom "plural", T.Atom "third" ]
                           , body = [ atoms [ "they" ] ]
                           }

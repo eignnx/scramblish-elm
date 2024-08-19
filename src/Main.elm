@@ -4,8 +4,8 @@ import Browser
 import Dict
 import EnGrammar exposing (..)
 import Grammar exposing (..)
-import Html exposing (Html, button, div, footer, h1, h3, header, main_, section, text)
-import Html.Attributes exposing (class, id, style)
+import Html exposing (Html, button, details, div, footer, h1, h3, header, main_, p, section, span, summary, text)
+import Html.Attributes exposing (attribute, class, id, style)
 import Html.Events exposing (onClick)
 import Logic.Builtins
 import Logic.Solve.Randomized
@@ -16,6 +16,7 @@ import Platform.Cmd as Cmd exposing (Cmd)
 import Random
 import Seq
 import Utils
+import WordGen.Gen as W
 
 
 
@@ -40,6 +41,8 @@ type alias Model =
     { examples : List SyntaxTree
     , scramblishGrammar : GrammarMut
     , querySoln : Maybe (Result T.SolveError T.USet)
+    , wordGenLanguage : W.Language
+    , sampleSyllables : List String
     }
 
 
@@ -54,12 +57,15 @@ init _ =
             , orthography = Orthography.romanOrthography
             }
       , querySoln = Nothing
+      , wordGenLanguage = W.defaultLanguage
+      , sampleSyllables = []
       }
     , Cmd.batch
         [ generateScramblishGrammar
         , Utils.doCmd AddExample
         , Utils.doCmd AddExample
         , Utils.doCmd AddExample
+        , Utils.doCmd RandomizeWordGenLanguage
         ]
     )
 
@@ -84,6 +90,10 @@ type Msg
     | MutationCreated Mutation.GrammarMut
     | RandomSolve
     | RandomSolution T.SolnStream
+    | RandomSyllables
+    | RandomSyllablesGenerated (List String)
+    | RandomizeWordGenLanguage
+    | WordGenLanguageGenerated W.Language
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -151,6 +161,28 @@ update msg model =
                 Seq.Cons (Err e) _ ->
                     ( { model | querySoln = Just (Err e) }, Cmd.none )
 
+        RandomSyllables ->
+            ( model
+            , Random.generate
+                RandomSyllablesGenerated
+                (Random.list 250 (W.randomSyllable model.wordGenLanguage))
+            )
+
+        RandomSyllablesGenerated syllables ->
+            ( { model | sampleSyllables = syllables }
+            , Cmd.none
+            )
+
+        RandomizeWordGenLanguage ->
+            ( model
+            , Random.generate
+                WordGenLanguageGenerated
+                W.randomLanguage
+            )
+
+        WordGenLanguageGenerated lang ->
+            ( { model | wordGenLanguage = lang }, Cmd.none )
+
 
 randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg
 randomSentences eng _ start =
@@ -182,16 +214,22 @@ view model =
                 [ text "Scramblish" ]
             ]
         , main_ []
-            [ section [ class "container" ]
-                ((model.examples
-                    |> List.indexedMap (sentenceExampleView model.scramblishGrammar)
-                 )
+            [ details [ attribute "open" "true" ]
+                ([ summary [] [ text "Sentence Examples" ] ]
+                    ++ (model.examples |> List.indexedMap (sentenceExampleView model.scramblishGrammar))
                     ++ [ button [ onClick AddExample ] [ text "+ Additional Example" ] ]
                 )
-            , section [ class "container" ]
-                ([ button [ onClick RandomSolve ] [ text "Random Solve Query" ]
-                 ]
-                    ++ (case model.querySoln of
+            , details [ attribute "open" "true" ]
+                [ summary [] [ text "Word Generation" ]
+                , p [] (model.sampleSyllables |> List.map (\s -> span [ class "sample-syllable" ] [ text s ]))
+                , button [ onClick RandomSyllables ] [ text "Random Syllables" ]
+                , button [ onClick RandomizeWordGenLanguage ] [ text "⟳ Regenerate WordGen Language" ]
+                , W.viewLanguage model.wordGenLanguage
+                ]
+            , details [ attribute "open" "true" ]
+                (summary [] [ text "Query Tests" ]
+                    :: button [ onClick RandomSolve ] [ text "Random Solve Query" ]
+                    :: (case model.querySoln of
                             Nothing ->
                                 [ text "No query results yet." ]
 

@@ -93,3 +93,53 @@ choice default choices =
 
         x :: xs ->
             Random.uniform x xs
+
+
+subsetMinMax : Int -> Int -> List a -> Random.Generator (List a)
+subsetMinMax minLen maxLen list =
+    Random.int minLen maxLen
+        |> Random.andThen
+            (\n ->
+                shuffled list
+                    |> Random.map (List.take n)
+            )
+
+
+subsetN : Int -> List a -> Random.Generator (List a)
+subsetN n list =
+    shuffled list |> Random.map (List.take n)
+
+
+subset : List a -> Random.Generator (List a)
+subset list =
+    subsetMinMax 0 (List.length list) list
+
+
+{-| Like `Random.map2`, but can be used to build arbitrarily deep nested tuple structure.
+
+
+# Example
+
+```elm
+    consonantsR
+        |> mapPair vowelsR
+        |> mapPair sibilantsR
+        |> mapPair liquidsR
+        |> mapPair finalsR
+        |> mapPair syllableTemplatesR
+        |> Random.map
+            (\( ( ( ( ( consonants, vowels ), sibilants ), liquids ), finals ), syllableTemplates ) ->
+                { consonants = consonants
+                , vowels = vowels
+                , sibilants = sibilants
+                , liquids = liquids
+                , finals = finals
+                , syllableTemplates = syllableTemplates
+                }
+            )
+```
+
+-}
+mapPair : Random.Generator a -> Random.Generator b -> Random.Generator ( b, a )
+mapPair genA genB =
+    Random.map2 (\a b -> ( b, a )) genA genB
