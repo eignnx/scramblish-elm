@@ -251,11 +251,6 @@ section {
 }
 
 .sample-syllable {
-    padding-inline: 0.25rem;
-    font-size: larger;
-}
-
-.sample-syllable::before,
-.sample-syllable::after {
-    content: "/";
+    padding-inline: 0.5rem;
+    font-size: 2em;
 }

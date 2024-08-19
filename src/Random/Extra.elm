@@ -149,3 +149,9 @@ subset list =
 mapPair : Random.Generator a -> Random.Generator b -> Random.Generator ( b, a )
 mapPair genA genB =
     Random.map2 (\a b -> ( b, a )) genA genB
+
+
+lowerWeightedRange : (Float -> Float) -> Int -> Int -> Random.Generator Int
+lowerWeightedRange scaleFn min max =
+    Random.float 0 1
+        |> Random.map (\percent -> min + floor (scaleFn percent * toFloat max))

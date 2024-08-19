@@ -11,28 +11,20 @@ import Random.Extra as RX
 
 
 allConsonants =
-    [ 'ʃ'
-    , 'ʒ'
-    , 'ʧ'
-    , 'ʤ'
-    , 'x'
+    [ 'x'
     , 'ɣ'
     , 'q'
     , 'ʔ'
-    , 's'
-    , 'z'
     , 't'
     , 'd'
     , 'p'
     , 'b'
     , 'f'
     , 'v'
+    , 'θ'
+    , 'ð'
     , 'k'
     , 'g'
-    , 'r'
-    , 'l'
-    , 'w'
-    , 'j'
     , 'm'
     , 'n'
     , 'ŋ'
@@ -43,6 +35,29 @@ allVowels =
     String.toList "aeiou"
 
 
+{-| Sibilants (from Latin: sībilāns : 'hissing') are fricative consonants of higher amplitude and pitch, made by directing a stream of air with the tongue towards the teeth.[1] Examples of sibilants are the consonants at the beginning of the English words sip, zip, ship, and genre. The symbols in the International Phonetic Alphabet used to denote the sibilant sounds in these words are, respectively, [s][z] [ʃ][ʒ]. Sibilants have a characteristically intense sound, which accounts for their paralinguistic use in getting one's attention (e.g. calling someone using "psst!" or quieting someone using "shhhh!").
+
+In the alveolar hissing sibilants [s] and [z], the back of the tongue forms a narrow channel (is grooved) to focus the stream of air more intensely, resulting in a high pitch. With the hushing sibilants (occasionally termed shibilants), such as English [ʃ], [tʃ], [ʒ], and [dʒ], the tongue is flatter, and the resulting pitch lower.[2][3]
+
+A broader category is stridents, which include more fricatives than sibilants such as uvulars. Sibilants are a higher pitched subset of the stridents. The English sibilants are:
+
+    /s, z, ʃ, ʒ, tʃ, dʒ/
+
+while the English stridents are:
+
+    /s, z, ʃ, ʒ, tʃ, dʒ, f, v/
+
+as /f/ and /v/ are stridents but not sibilants because they are lower in pitch.[4][5]
+
+Be aware, some linguistics use the terms stridents and sibilants interchangeably to refer to the greater amplitude and pitch compared to other fricatives.[6]
+
+"Stridency" refers to the perceptual intensity of the sound of a sibilant consonant, or obstacle fricatives or affricates, which refers to the critical role of the teeth in producing the sound as an obstacle to the airstream. Non-sibilant fricatives and affricates produce their characteristic sound directly with the tongue or lips etc. and the place of contact in the mouth, without secondary involvement of the teeth.[citation needed]
+
+The characteristic intensity of sibilants means that small variations in tongue shape and position are perceivable, with the result that there are many sibilant types that contrast in various languages.
+
+(source: [Wikipedia](https://en.wikipedia.org/wiki/Sibilant))
+
+-}
 sibilantSets =
     [ [ 's', 'ʃ', 'f' ]
     , [ 's', 'ʃ' ]
@@ -50,13 +65,28 @@ sibilantSets =
     ]
 
 
-liquidSets =
-    [ [ 'l', 'r' ]
-    , [ 'l' ]
-    , [ 'r' ]
-    , [ 'w', 'j' ]
-    , [ 'l', 'r', 'w', 'j' ]
-    ]
+{-| In linguistics, a liquid consonant or simply liquid is any of a class of
+consonants that consists of rhotics and voiced lateral approximants, which are
+also sometimes described as "R-like sounds" and "L-like sounds". The word liquid
+seems to be a calque of the Ancient Greek word ὑγρός (hygrós, transl. moist),
+initially used by grammarian Dionysius Thrax to describe Greek sonorants.
+
+Liquid consonants are more prone to be part of consonant clusters and of the
+syllable nucleus. Their third formants are generally non-predictable based on
+the first two formants. Another important feature is their complex articulation,
+which makes them a hard consonant class to study with precision and the last
+consonants to be produced by children during their phonological development.
+They are also more likely to undergo certain types of phonological changes such
+as assimilation, dissimilation and metathesis.
+
+Most languages have at least one liquid in their phonemic inventory. English has
+two, `/l/` and `/ɹ/`.
+
+(source: [Wikipedia](https://en.wikipedia.org/wiki/Liquid_consonant))
+
+-}
+allLiquids =
+    [ 'l', 'r', 'ɹ', 'ʁ', 'w', 'j' ]
 
 
 finalSets =
@@ -123,7 +153,7 @@ defaultLanguage =
     { consonants = allConsonants
     , vowels = allVowels
     , sibilants = List.concat sibilantSets
-    , liquids = List.concat liquidSets
+    , liquids = allLiquids
     , finals = List.concat finalSets
     , syllableTemplates = syllableStructureTemplates
     }
@@ -176,28 +206,41 @@ viewLanguage lang =
     let
         spacedChars list =
             list |> List.intersperse ' ' |> String.fromList
+
+        ifNonEmptyList : List a -> b -> List b
+        ifNonEmptyList list item =
+            if List.length list > 0 then
+                [ item ]
+
+            else
+                []
     in
     div [ class "wordgen-lang" ]
-        [ div [] [ text "Consonants: ", text (spacedChars lang.consonants) ]
-        , div [] [ text "Vowels: ", text (spacedChars lang.vowels) ]
-        , div [] [ text "Sibilants: ", text (spacedChars lang.sibilants) ]
-        , div [] [ text "Liquids: ", text (spacedChars lang.liquids) ]
-        , div [] [ text "Finals: ", text (spacedChars lang.finals) ]
-        , div []
-            [ text "Syllable Templates: "
-            , ul []
-                (lang.syllableTemplates
-                    |> List.map
-                        (\template ->
-                            template
-                                |> List.map stringFromLetterClass
-                                |> String.join ""
-                                |> text
-                                |> (\t -> li [] [ t ])
+        ([ div [] [ text "Consonants: ", text (spacedChars lang.consonants) ]
+         , div [] [ text "Vowels: ", text (spacedChars lang.vowels) ]
+         ]
+            ++ ifNonEmptyList lang.sibilants
+                (div [] [ text "Sibilants: ", text (spacedChars lang.sibilants) ])
+            ++ ifNonEmptyList lang.liquids
+                (div [] [ text "Liquids: ", text (spacedChars lang.liquids) ])
+            ++ ifNonEmptyList lang.finals
+                (div [] [ text "Finals: ", text (spacedChars lang.finals) ])
+            ++ [ div []
+                    [ text "Syllable Templates: "
+                    , ul []
+                        (lang.syllableTemplates
+                            |> List.map
+                                (\template ->
+                                    template
+                                        |> List.map stringFromLetterClass
+                                        |> String.join ""
+                                        |> text
+                                        |> (\t -> li [] [ t ])
+                                )
                         )
-                )
-            ]
-        ]
+                    ]
+               ]
+        )
 
 
 stringFromLetterClass : LetterClass -> String
@@ -225,45 +268,71 @@ stringFromLetterClass c =
 randomLanguage : R.Generator Language
 randomLanguage =
     let
+        syllableTemplatesR : R.Generator (List (List LetterClass))
+        syllableTemplatesR =
+            RX.lowerWeightedRange (\x -> x * x * x) 1 maxSyllableTemplates
+                |> R.andThen
+                    (\nTemplates -> RX.subsetN nTemplates syllableStructureTemplates)
+
         consonantsR =
             RX.subsetMin 4 allConsonants
 
         vowelsR =
             RX.subsetMin 1 allVowels
-
-        sibilantsR =
-            RX.choice [] sibilantSets
-
-        liquidsR =
-            RX.choice [] liquidSets
-
-        finalsR =
-            RX.choice [] finalSets
-
-        syllableTemplatesR =
-            R.float 0 1
-                |> R.andThen
-                    (\percent ->
-                        let
-                            nTemplates =
-                                1 + floor (percent * percent * percent * toFloat maxSyllableTemplates)
-                        in
-                        RX.subsetN nTemplates syllableStructureTemplates
-                    )
     in
-    consonantsR
-        |> RX.mapPair vowelsR
-        |> RX.mapPair sibilantsR
-        |> RX.mapPair liquidsR
-        |> RX.mapPair finalsR
-        |> RX.mapPair syllableTemplatesR
-        |> R.map
-            (\( ( ( ( ( consonants, vowels ), sibilants ), liquids ), finals ), syllableTemplates ) ->
-                { consonants = consonants
-                , vowels = vowels
-                , sibilants = sibilants
-                , liquids = liquids
-                , finals = finals
-                , syllableTemplates = syllableTemplates
-                }
+    syllableTemplatesR
+        |> R.andThen
+            (\syllableTemplates ->
+                let
+                    unwrapOpt : LetterClass -> LetterClass
+                    unwrapOpt c =
+                        case c of
+                            Opt inner ->
+                                unwrapOpt inner
+
+                            _ ->
+                                c
+
+                    syllableLetterClasses =
+                        List.concat syllableTemplates |> List.map unwrapOpt
+
+                    ifClassIsRelevant :
+                        LetterClass
+                        -> R.Generator (List b)
+                        -> R.Generator (List b)
+                    ifClassIsRelevant class itemsR =
+                        if List.member class syllableLetterClasses then
+                            itemsR
+
+                        else
+                            R.constant []
+
+                    sibilantsR : R.Generator (List Char)
+                    sibilantsR =
+                        RX.choice [] sibilantSets
+                            |> ifClassIsRelevant S
+
+                    liquidsR =
+                        RX.subsetMin 1 allLiquids
+                            |> ifClassIsRelevant L
+
+                    finalsR =
+                        RX.choice [] finalSets
+                            |> ifClassIsRelevant F
+                in
+                consonantsR
+                    |> RX.mapPair vowelsR
+                    |> RX.mapPair sibilantsR
+                    |> RX.mapPair liquidsR
+                    |> RX.mapPair finalsR
+                    |> R.map
+                        (\( ( ( ( consonants, vowels ), sibilants ), liquids ), finals ) ->
+                            { consonants = consonants
+                            , vowels = vowels
+                            , sibilants = sibilants
+                            , liquids = liquids
+                            , finals = finals
+                            , syllableTemplates = syllableTemplates
+                            }
+                        )
             )

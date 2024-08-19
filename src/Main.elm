@@ -165,7 +165,7 @@ update msg model =
             ( model
             , Random.generate
                 RandomSyllablesGenerated
-                (Random.list 250 (W.randomSyllable model.wordGenLanguage))
+                (Random.list 100 (W.randomSyllable model.wordGenLanguage))
             )
 
         RandomSyllablesGenerated syllables ->
@@ -224,7 +224,7 @@ view model =
                 , button [ onClick RandomizeWordGenLanguage ] [ text "⟳ Regenerate WordGen Language" ]
                 , W.viewLanguage model.wordGenLanguage
                 , button [ onClick RandomSyllables ] [ text "Random Syllables" ]
-                , p [] (model.sampleSyllables |> List.map (\s -> span [ class "sample-syllable" ] [ text s ]))
+                , p [] (model.sampleSyllables |> List.map (\s -> span [ class "sample-syllable" ] [ text ("/" ++ s ++ "/") ]))
                 ]
             , details [ attribute "open" "true" ]
                 (summary [] [ text "Query Tests" ]
