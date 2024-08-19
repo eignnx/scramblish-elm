@@ -224,7 +224,7 @@ view model =
                 , button [ onClick RandomizeWordGenLanguage ] [ text "⟳ Regenerate WordGen Language" ]
                 , W.viewLanguage model.wordGenLanguage
                 , button [ onClick RandomSyllables ] [ text "Random Syllables" ]
-                , p [] (model.sampleSyllables |> List.map (\s -> span [ class "sample-syllable" ] [ text ("/" ++ s ++ "/") ]))
+                , p [] (model.sampleSyllables |> List.map (\s -> span [ class "sample-syllable" ] [ text ("/\u{2060}" ++ s ++ "\u{2060}/ ") ]))
                 ]
             , details [ attribute "open" "true" ]
                 (summary [] [ text "Query Tests" ]

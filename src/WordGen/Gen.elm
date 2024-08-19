@@ -8,6 +8,7 @@ import Html exposing (Html, div, li, text, ul)
 import Html.Attributes exposing (class)
 import Random as R
 import Random.Extra as RX
+import Set
 
 
 allConsonants =
@@ -28,11 +29,24 @@ allConsonants =
     , 'm'
     , 'n'
     , 'ŋ'
+
+    -- The following are duplicates of common consonants so that they have more weight.
+    , 't'
+    , 'd'
+    , 'p'
+    , 'b'
+    , 'k'
+    , 'g'
     ]
 
 
 allVowels =
-    String.toList "aeiou"
+    String.toList
+        ("aeiou"
+            -- Capitalized vowels stand for language-specific vowels. Will be replaced
+            -- in the orthography stage.
+            ++ "AEIOU"
+        )
 
 
 {-| Sibilants (from Latin: sībilāns : 'hissing') are fricative consonants of higher amplitude and pitch, made by directing a stream of air with the tongue towards the teeth.[1] Examples of sibilants are the consonants at the beginning of the English words sip, zip, ship, and genre. The symbols in the International Phonetic Alphabet used to denote the sibilant sounds in these words are, respectively, [s][z] [ʃ][ʒ]. Sibilants have a characteristically intense sound, which accounts for their paralinguistic use in getting one's attention (e.g. calling someone using "psst!" or quieting someone using "shhhh!").
@@ -189,6 +203,27 @@ choiceFromLetterClass lang class =
                     )
 
 
+invalidSyllable : Language -> String -> Bool
+invalidSyllable lang syll =
+    syll
+        |> String.toList
+        |> hasDuplicateAdjacentLetters lang '￼'
+
+
+hasDuplicateAdjacentLetters : Language -> Char -> List Char -> Bool
+hasDuplicateAdjacentLetters lang prev syll =
+    case syll of
+        [] ->
+            False
+
+        c :: rest ->
+            if c == prev then
+                True
+
+            else
+                hasDuplicateAdjacentLetters lang c rest
+
+
 randomSyllable : Language -> R.Generator String
 randomSyllable lang =
     RX.choice [ C, C, C, C, C, C ] lang.syllableTemplates
@@ -198,6 +233,14 @@ randomSyllable lang =
                     |> RX.flattenList (choiceFromLetterClass lang)
                     |> R.map (\cs -> List.filterMap identity cs)
                     |> R.map String.fromList
+            )
+        |> R.andThen
+            (\syll ->
+                if invalidSyllable lang syll then
+                    randomSyllable lang
+
+                else
+                    R.constant syll
             )
 
 
@@ -276,6 +319,7 @@ randomLanguage =
 
         consonantsR =
             RX.subsetMin 4 allConsonants
+                |> R.map (Set.fromList >> Set.toList)
 
         vowelsR =
             RX.subsetMin 1 allVowels
