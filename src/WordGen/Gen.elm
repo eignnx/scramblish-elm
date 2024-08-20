@@ -231,7 +231,11 @@ invalidSyllable : Language -> String -> Bool
 invalidSyllable lang syll =
     syll
         |> String.toList
-        |> hasDuplicateAdjacentLetters lang '￼'
+        |> (\letters ->
+                False
+                    || hasDuplicateAdjacentLetters lang '￼' letters
+                    || hasHardClusters lang '￼' letters
+           )
 
 
 hasDuplicateAdjacentLetters : Language -> Char -> List Char -> Bool
@@ -246,6 +250,28 @@ hasDuplicateAdjacentLetters lang prev syll =
 
             else
                 hasDuplicateAdjacentLetters lang c rest
+
+
+hasHardClusters : Language -> Char -> List Char -> Bool
+hasHardClusters lang prev syll =
+    let
+        cluster : List Char -> List Char -> ( Char, Char ) -> Bool
+        cluster prevOptions currOptions ( prevCh, currCh ) =
+            List.member prevCh prevOptions && List.member currCh currOptions
+    in
+    case syll of
+        [] ->
+            False
+
+        curr :: rest ->
+            False
+                || cluster [ 's', 'ʃ', 'v' ] [ 's', 'ʃ' ] ( prev, curr )
+                || cluster [ 'z', 'ʒ', 'f' ] [ 'z', 'ʒ' ] ( prev, curr )
+                || cluster allLiquids allLiquids ( prev, curr )
+                || cluster [ 't', 'd' ] [ 't', 'd' ] ( prev, curr )
+                || cluster [ 'ɣ' ] (allSibilants ++ allConsonants) ( prev, curr )
+                || cluster (allSibilants ++ allConsonants) [ 'ɣ' ] ( prev, curr )
+                || hasHardClusters lang curr rest
 
 
 randomSyllable : Language -> R.Generator String
