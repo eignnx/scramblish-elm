@@ -244,7 +244,7 @@ section {
     border: 1px solid goldenrod;
     border-radius: 2px;
     padding: 1rem;
-    columns: 3;
+    columns: 2;
 }
 
 .wordgen-lang li {

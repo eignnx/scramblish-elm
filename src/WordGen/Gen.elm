@@ -24,7 +24,6 @@ allConsonants =
     , 'v' -- Pronounced like "v" as in "vase"
     , 'θ' -- Pronounced like "th" as in "thin"
     , 'ð' -- Pronounced like "th" as in "this"
-    , 'c' -- Pronounced kinda like "ky" as in "cute"
     , 'k' -- Pronounced like "k" as in "kite"
     , 'g' -- Pronounced like "g" as in "goat"
     , 'm' -- Pronounced like "m" as in "mop"
@@ -55,7 +54,7 @@ allConsonants =
 
 allVowels =
     String.toList
-        "aeiou"
+        "aaeeiioouu"
         -- Capitalized vowels stand for language-specific vowels. Will be replaced
         -- in the orthography stage.
         ++ [ 'A', 'E', 'I' ]
@@ -150,14 +149,20 @@ syllableStructureTemplates =
     , [ C, V, Opt F ]
     , [ C, Opt L, V, C ]
     , [ C, Opt L, V, F ]
+    , [ C, Opt S, V, C ]
+    , [ C, Opt S, V, Opt C ]
+    , [ Opt C, S, V, F ]
     , [ Opt S, C, V, C ]
-    , [ Opt S, C, V, F ]
     , [ Opt S, C, V, Opt C ]
     , [ S, Opt C, V, C ]
     , [ S, Opt C, V, F ]
-    , [ S, Opt C, V, Opt C ]
+    , [ C, Opt C, V, Opt C ]
+    , [ Opt S, Opt C, V, L, Opt C ]
     , [ Opt C, V, F ]
     , [ Opt C, V, Opt C ]
+    , [ Opt C, V, Opt C, S ]
+    , [ Opt L, V, Opt F ]
+    , [ Opt L, V, C, Opt S ]
     , [ Opt C, V, Opt F ]
     , [ Opt C, Opt L, V, C ]
     , [ C, V, Opt L, Opt C ]
@@ -177,7 +182,7 @@ type alias Language =
     , sibilants : List Char
     , liquids : List Char
     , finals : List Char
-    , syllableTemplates : List (List LetterClass)
+    , syllableTemplate : List LetterClass
     }
 
 
@@ -188,7 +193,7 @@ defaultLanguage =
     , sibilants = allSibilants
     , liquids = allLiquids
     , finals = List.concat finalSets
-    , syllableTemplates = syllableStructureTemplates
+    , syllableTemplate = [ C, V, C ]
     }
 
 
@@ -245,14 +250,10 @@ hasDuplicateAdjacentLetters lang prev syll =
 
 randomSyllable : Language -> R.Generator String
 randomSyllable lang =
-    RX.choice [ C, C, C, C, C, C ] lang.syllableTemplates
-        |> R.andThen
-            (\template ->
-                template
-                    |> RX.flattenList (choiceFromLetterClass lang)
-                    |> R.map (\cs -> List.filterMap identity cs)
-                    |> R.map String.fromList
-            )
+    lang.syllableTemplate
+        |> RX.flattenList (choiceFromLetterClass lang)
+        |> R.map (\cs -> List.filterMap identity cs)
+        |> R.map String.fromList
         |> R.andThen
             (\syll ->
                 if invalidSyllable lang syll then
@@ -278,8 +279,13 @@ viewLanguage lang =
                 []
     in
     div [ class "wordgen-lang" ]
-        ([ div [] [ text "Consonants: ", text (spacedChars lang.consonants) ]
-         , div [] [ text "Vowels: ", text (spacedChars lang.vowels) ]
+        ([ div []
+            [ text "Syllable Template: "
+            , lang.syllableTemplate
+                |> List.map stringFromLetterClass
+                |> String.join ""
+                |> text
+            ]
          ]
             ++ ifNonEmptyList lang.sibilants
                 (div [] [ text "Sibilants: ", text (spacedChars lang.sibilants) ])
@@ -287,20 +293,8 @@ viewLanguage lang =
                 (div [] [ text "Liquids: ", text (spacedChars lang.liquids) ])
             ++ ifNonEmptyList lang.finals
                 (div [] [ text "Finals: ", text (spacedChars lang.finals) ])
-            ++ [ div []
-                    [ text "Syllable Templates: "
-                    , ul []
-                        (lang.syllableTemplates
-                            |> List.map
-                                (\template ->
-                                    template
-                                        |> List.map stringFromLetterClass
-                                        |> String.join ""
-                                        |> text
-                                        |> (\t -> li [] [ t ])
-                                )
-                        )
-                    ]
+            ++ [ div [] [ text "Vowels: ", text (spacedChars lang.vowels) ]
+               , div [] [ text "Consonants: ", text (spacedChars lang.consonants) ]
                ]
         )
 
@@ -330,11 +324,9 @@ stringFromLetterClass c =
 randomLanguage : R.Generator Language
 randomLanguage =
     let
-        syllableTemplatesR : R.Generator (List (List LetterClass))
-        syllableTemplatesR =
-            RX.lowerWeightedRange (\x -> x * x * x) 1 maxSyllableTemplates
-                |> R.andThen
-                    (\nTemplates -> RX.subsetN nTemplates syllableStructureTemplates)
+        syllableTemplateR : R.Generator (List LetterClass)
+        syllableTemplateR =
+            RX.choice [] syllableStructureTemplates
 
         consonantsR =
             RX.subsetMin 4 allConsonants
@@ -345,9 +337,9 @@ randomLanguage =
                 |> R.andThen (\n -> RX.subsetN n allVowels)
                 |> R.map (Set.fromList >> Set.toList)
     in
-    syllableTemplatesR
+    syllableTemplateR
         |> R.andThen
-            (\syllableTemplates ->
+            (\syllableTemplate ->
                 let
                     unwrapOpt : LetterClass -> LetterClass
                     unwrapOpt c =
@@ -359,7 +351,7 @@ randomLanguage =
                                 c
 
                     syllableLetterClasses =
-                        List.concat syllableTemplates |> List.map unwrapOpt
+                        syllableTemplate |> List.map unwrapOpt
 
                     ifClassIsRelevant :
                         LetterClass
@@ -398,7 +390,7 @@ randomLanguage =
                             , sibilants = sibilants
                             , liquids = liquids
                             , finals = finals
-                            , syllableTemplates = syllableTemplates
+                            , syllableTemplate = syllableTemplate
                             }
                         )
             )
