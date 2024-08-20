@@ -11,8 +11,9 @@ import Random.Extra as RX
 import Set
 
 
-allConsonants =
-    englishUnfriendlyConsonants
+allBaseConsonants =
+    []
+        ++ englishUnfriendlyConsonants
         ++ List.concat (List.repeat englishFriendlyConsonantWeight englishFriendlyConsonants)
 
 
@@ -43,6 +44,11 @@ englishFriendlyConsonants =
 
 englishFriendlyConsonantWeight =
     7
+
+
+allConsonants =
+    (Set.fromList >> Set.toList)
+        (allBaseConsonants ++ allSibilants ++ allApproximants ++ List.concat finalSets)
 
 
 allVowels =
@@ -121,7 +127,7 @@ two, `/l/` and `/ɹ/`.
 (source: [Wikipedia](https://en.wikipedia.org/wiki/Liquid_consonant))
 
 -}
-allLiquidsAndApproximants =
+allApproximants =
     [ 'l' -- Pronounced like "l" as in "lip"
     , 'ɹ' -- Pronounced like "r" as in English "rat"
     , 'r' -- Pronounced like "rr" as in Spanish "perro"
@@ -146,7 +152,7 @@ type LetterClass
     = C -- Consonant
     | V -- Vowel
     | S -- Sibilant
-    | L -- Liquid/Approximant
+    | A -- Approximant
     | F -- Final
     | Opt LetterClass -- An optional letter class
 
@@ -162,8 +168,8 @@ syllableStructureTemplates =
     , [ C, V, F ]
     , [ Opt C, V, C ]
     , [ C, V, Opt F ]
-    , [ C, Opt L, V, C ]
-    , [ C, Opt L, V, F ]
+    , [ C, Opt A, V, C ]
+    , [ C, Opt A, V, F ]
     , [ C, Opt S, V, C ]
     , [ C, Opt S, V, Opt C ]
     , [ Opt C, S, V, F ]
@@ -172,17 +178,17 @@ syllableStructureTemplates =
     , [ S, Opt C, V, C ]
     , [ S, Opt C, V, F ]
     , [ C, Opt C, V, Opt C ]
-    , [ Opt S, Opt C, V, L, Opt C ]
+    , [ Opt S, Opt C, V, A, Opt C ]
     , [ Opt C, V, F ]
     , [ Opt C, V, Opt C ]
     , [ Opt C, V, Opt C, S ]
-    , [ Opt L, V, Opt F ]
-    , [ Opt L, V, C, Opt S ]
+    , [ Opt A, V, Opt F ]
+    , [ Opt A, V, C, Opt S ]
     , [ Opt C, V, Opt F ]
-    , [ Opt C, Opt L, V, C ]
-    , [ C, V, Opt L, Opt C ]
-    , [ Opt C, V, Opt L, C ]
-    , [ Opt C, V, L, Opt C ]
+    , [ Opt C, Opt A, V, C ]
+    , [ C, V, Opt A, Opt C ]
+    , [ Opt C, V, Opt A, C ]
+    , [ Opt C, V, A, Opt C ]
     ]
 
 
@@ -195,7 +201,7 @@ type alias Language =
     { consonants : List Char
     , vowels : List Char
     , sibilants : List Char
-    , liquids : List Char
+    , approximants : List Char
     , finals : List Char
     , syllableTemplate : List LetterClass
     }
@@ -203,10 +209,10 @@ type alias Language =
 
 defaultLanguage : Language
 defaultLanguage =
-    { consonants = allConsonants
+    { consonants = allBaseConsonants
     , vowels = allVowels
     , sibilants = allSibilants
-    , liquids = allLiquidsAndApproximants
+    , approximants = allApproximants
     , finals = List.concat finalSets
     , syllableTemplate = [ C, V, C ]
     }
@@ -224,8 +230,8 @@ choiceFromLetterClass lang class =
         S ->
             RX.choice '￼' lang.sibilants |> R.map Just
 
-        L ->
-            RX.choice '￼' lang.liquids |> R.map Just
+        A ->
+            RX.choice '￼' lang.approximants |> R.map Just
 
         F ->
             RX.choice '￼' lang.finals |> R.map Just
@@ -273,19 +279,33 @@ hasHardClusters lang prev syll =
         cluster : List Char -> List Char -> ( Char, Char ) -> Bool
         cluster prevOptions currOptions ( prevCh, currCh ) =
             List.member prevCh prevOptions && List.member currCh currOptions
+
+        disallowedClusters : List ( List Char, List Char ) -> ( Char, Char ) -> Bool
+        disallowedClusters clusters ( prevCh, currCh ) =
+            case clusters of
+                [] ->
+                    False
+
+                ( prevOptions, currOptions ) :: rest ->
+                    cluster prevOptions currOptions ( prevCh, currCh )
+                        || disallowedClusters rest ( prevCh, currCh )
     in
     case syll of
         [] ->
             False
 
         curr :: rest ->
-            False
-                || cluster [ 's', 'ʃ', 'v' ] [ 's', 'ʃ' ] ( prev, curr )
-                || cluster [ 'z', 'ʒ', 'f' ] [ 'z', 'ʒ' ] ( prev, curr )
-                || cluster allLiquidsAndApproximants allLiquidsAndApproximants ( prev, curr )
-                || cluster [ 't', 'd' ] [ 't', 'd' ] ( prev, curr )
-                || cluster [ 'ɣ' ] (allSibilants ++ allConsonants) ( prev, curr )
-                || cluster (allSibilants ++ allConsonants) [ 'ɣ' ] ( prev, curr )
+            (( prev, curr )
+                |> disallowedClusters
+                    [ ( [ 's', 'ʃ', 'v' ], [ 's', 'ʃ' ] )
+                    , ( [ 'z', 'ʒ', 'f' ], [ 'z', 'ʒ' ] )
+                    , ( [ 'd' ], [ 'ʃ' ] )
+                    , ( allApproximants, allApproximants )
+                    , ( [ 't', 'd' ], [ 't', 'd' ] )
+                    , ( [ 'ɣ' ], allConsonants )
+                    , ( allConsonants, [ 'ɣ' ] )
+                    ]
+            )
                 || hasHardClusters lang curr rest
 
 
@@ -330,8 +350,8 @@ viewLanguage lang =
          ]
             ++ ifNonEmptyList lang.sibilants
                 (div [] [ text "Sibilants: ", text (spacedChars lang.sibilants) ])
-            ++ ifNonEmptyList lang.liquids
-                (div [] [ text "Liquids/Approximants: ", text (spacedChars lang.liquids) ])
+            ++ ifNonEmptyList lang.approximants
+                (div [] [ text "Approximants: ", text (spacedChars lang.approximants) ])
             ++ ifNonEmptyList lang.finals
                 (div [] [ text "Finals: ", text (spacedChars lang.finals) ])
             ++ [ div [] [ text "Vowels: ", text (spacedChars lang.vowels) ]
@@ -352,8 +372,8 @@ stringFromLetterClass c =
         S ->
             "S"
 
-        L ->
-            "L"
+        A ->
+            "A"
 
         F ->
             "F"
@@ -370,7 +390,7 @@ randomLanguage =
             RX.choice [] syllableStructureTemplates
 
         consonantsR =
-            RX.subsetMinMax 4 (List.length (englishUnfriendlyConsonants ++ englishFriendlyConsonants) // 5 * 4) allConsonants
+            RX.subsetMinMax 4 (List.length (englishUnfriendlyConsonants ++ englishFriendlyConsonants) // 5 * 4) allBaseConsonants
                 |> R.map (Set.fromList >> Set.toList)
 
         vowelsR =
@@ -410,9 +430,9 @@ randomLanguage =
                         RX.subsetMin 1 allSibilants
                             |> ifClassIsRelevant S
 
-                    liquidsR =
-                        RX.subsetMin 1 allLiquidsAndApproximants
-                            |> ifClassIsRelevant L
+                    approximantsR =
+                        RX.subsetMin 1 allApproximants
+                            |> ifClassIsRelevant A
 
                     finalsR =
                         RX.subsetMinMax 1 2 finalSets
@@ -422,14 +442,14 @@ randomLanguage =
                 consonantsR
                     |> RX.mapPair vowelsR
                     |> RX.mapPair sibilantsR
-                    |> RX.mapPair liquidsR
+                    |> RX.mapPair approximantsR
                     |> RX.mapPair finalsR
                     |> R.map
-                        (\( ( ( ( consonants, vowels ), sibilants ), liquids ), finals ) ->
+                        (\( ( ( ( consonants, vowels ), sibilants ), approximants ), finals ) ->
                             { consonants = consonants
                             , vowels = vowels
                             , sibilants = sibilants
-                            , liquids = liquids
+                            , approximants = approximants
                             , finals = finals
                             , syllableTemplate = syllableTemplate
                             }
