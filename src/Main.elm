@@ -246,7 +246,7 @@ view model =
                 , button [ onClick RandomSyllables ] [ text "Random Syllables" ]
                 , p [] (model.sampleSyllables |> List.map (\s -> span [ class "sample-syllable" ] [ text ("/\u{2060}" ++ s ++ "\u{2060}/ ") ]))
                 , button [ onClick RandomWords ] [ text "Random Words" ]
-                , p [] (model.sampleWords |> List.map (\s -> span [ class "sample-word" ] [ text (s ++ " ") ]))
+                , p [] (model.sampleWords |> List.map (\s -> span [ class "sample-word" ] [ text ("[\u{2060}" ++ s ++ "\u{2060}] ") ]))
                 ]
             , details [ attribute "open" "false" ]
                 (summary [] [ text "Query Tests" ]
