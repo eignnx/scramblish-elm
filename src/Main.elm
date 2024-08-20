@@ -15,6 +15,7 @@ import Orthography exposing (chooseOrtho)
 import Platform.Cmd as Cmd exposing (Cmd)
 import Random
 import Seq
+import Set
 import Utils
 import WordGen.Gen as W
 
@@ -43,6 +44,7 @@ type alias Model =
     , querySoln : Maybe (Result T.SolveError T.USet)
     , wordGenLanguage : W.Language
     , sampleSyllables : List String
+    , sampleWords : List String
     }
 
 
@@ -59,6 +61,7 @@ init _ =
       , querySoln = Nothing
       , wordGenLanguage = W.defaultLanguage
       , sampleSyllables = []
+      , sampleWords = []
       }
     , Cmd.batch
         [ generateScramblishGrammar
@@ -94,6 +97,8 @@ type Msg
     | RandomSyllablesGenerated (List String)
     | RandomizeWordGenLanguage
     | WordGenLanguageGenerated W.Language
+    | RandomWords
+    | RandomWordsGenerated (List String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -165,11 +170,11 @@ update msg model =
             ( model
             , Random.generate
                 RandomSyllablesGenerated
-                (Random.list 100 (W.randomSyllable model.wordGenLanguage))
+                (Random.list 50 (W.randomSyllable model.wordGenLanguage))
             )
 
         RandomSyllablesGenerated syllables ->
-            ( { model | sampleSyllables = syllables }
+            ( { model | sampleSyllables = (Set.fromList >> Set.toList) syllables }
             , Cmd.none
             )
 
@@ -181,7 +186,22 @@ update msg model =
             )
 
         WordGenLanguageGenerated lang ->
-            ( { model | wordGenLanguage = lang }, Cmd.none )
+            ( { model | wordGenLanguage = lang }
+            , Cmd.batch
+                [ Utils.doCmd RandomSyllables
+                , Utils.doCmd RandomWords
+                ]
+            )
+
+        RandomWords ->
+            ( model
+            , Random.generate
+                RandomWordsGenerated
+                (Random.list 25 (W.randomWord model.wordGenLanguage))
+            )
+
+        RandomWordsGenerated words ->
+            ( { model | sampleWords = (Set.fromList >> Set.toList) words }, Cmd.none )
 
 
 randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg
@@ -214,7 +234,7 @@ view model =
                 [ text "Scramblish" ]
             ]
         , main_ []
-            [ details [ attribute "open" "true" ]
+            [ details [ attribute "open" "false" ]
                 ([ summary [] [ text "Sentence Examples" ] ]
                     ++ (model.examples |> List.indexedMap (sentenceExampleView model.scramblishGrammar))
                     ++ [ button [ onClick AddExample ] [ text "+ Additional Example" ] ]
@@ -225,8 +245,10 @@ view model =
                 , W.viewLanguage model.wordGenLanguage
                 , button [ onClick RandomSyllables ] [ text "Random Syllables" ]
                 , p [] (model.sampleSyllables |> List.map (\s -> span [ class "sample-syllable" ] [ text ("/\u{2060}" ++ s ++ "\u{2060}/ ") ]))
+                , button [ onClick RandomWords ] [ text "Random Words" ]
+                , p [] (model.sampleWords |> List.map (\s -> span [ class "sample-word" ] [ text (s ++ " ") ]))
                 ]
-            , details [ attribute "open" "true" ]
+            , details [ attribute "open" "false" ]
                 (summary [] [ text "Query Tests" ]
                     :: button [ onClick RandomSolve ] [ text "Random Solve Query" ]
                     :: (case model.querySoln of

@@ -256,3 +256,9 @@ section {
     padding-inline: 0.5rem;
     font-size: 2em;
 }
+
+.sample-word {
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    padding-inline: 0.5rem;
+    font-size: 2em;
+}

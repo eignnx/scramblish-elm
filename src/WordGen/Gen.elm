@@ -12,41 +12,53 @@ import Set
 
 
 allConsonants =
-    [ 'x'
-    , 'ɣ'
-    , 'q'
-    , 'ʔ'
-    , 't'
-    , 'd'
-    , 'p'
-    , 'b'
-    , 'f'
-    , 'v'
-    , 'θ'
-    , 'ð'
-    , 'k'
-    , 'g'
-    , 'm'
-    , 'n'
-    , 'ŋ'
+    [ 'x' -- Pronounced like the "ch" in "Bach"
+    , 'ɣ' -- Pronounced like the "g" in "amigo" (some dialects).
+    , 'q' -- Pronounced like "k" but further back in the throat
+    , 'ʔ' -- Glottal stop, like the sound between the syllables in "uh-oh"
+    , 't' -- Pronounced like "t" as in "top"
+    , 'd' -- Pronounced like "d" as in "dog"
+    , 'p' -- Pronounced like "p" as in "pat"
+    , 'b' -- Pronounced like "b" as in "bat"
+    , 'f' -- Pronounced like "f" as in "fog"
+    , 'v' -- Pronounced like "v" as in "vase"
+    , 'θ' -- Pronounced like "th" as in "thin"
+    , 'ð' -- Pronounced like "th" as in "this"
+    , 'c' -- Pronounced kinda like "ky" as in "cute"
+    , 'k' -- Pronounced like "k" as in "kite"
+    , 'g' -- Pronounced like "g" as in "goat"
+    , 'm' -- Pronounced like "m" as in "mop"
+    , 'n' -- Pronounced like "n" as in "no"
+    , 'ŋ' -- Pronounced like "ng" as in "sing"
 
     -- The following are duplicates of common consonants so that they have more weight.
     , 't'
+    , 't'
+    , 't'
+    , 'd'
+    , 'd'
     , 'd'
     , 'p'
+    , 'p'
+    , 'p'
+    , 'b'
+    , 'b'
     , 'b'
     , 'k'
+    , 'k'
+    , 'k'
+    , 'g'
+    , 'g'
     , 'g'
     ]
 
 
 allVowels =
     String.toList
-        ("aeiou"
-            -- Capitalized vowels stand for language-specific vowels. Will be replaced
-            -- in the orthography stage.
-            ++ "AEIOU"
-        )
+        "aeiou"
+        -- Capitalized vowels stand for language-specific vowels. Will be replaced
+        -- in the orthography stage.
+        ++ [ 'A', 'E', 'I' ]
 
 
 {-| Sibilants (from Latin: sībilāns : 'hissing') are fricative consonants of higher amplitude and pitch, made by directing a stream of air with the tongue towards the teeth.[1] Examples of sibilants are the consonants at the beginning of the English words sip, zip, ship, and genre. The symbols in the International Phonetic Alphabet used to denote the sibilant sounds in these words are, respectively, [s][z] [ʃ][ʒ]. Sibilants have a characteristically intense sound, which accounts for their paralinguistic use in getting one's attention (e.g. calling someone using "psst!" or quieting someone using "shhhh!").
@@ -72,11 +84,8 @@ The characteristic intensity of sibilants means that small variations in tongue 
 (source: [Wikipedia](https://en.wikipedia.org/wiki/Sibilant))
 
 -}
-sibilantSets =
-    [ [ 's', 'ʃ', 'f' ]
-    , [ 's', 'ʃ' ]
-    , [ 's' ]
-    ]
+allSibilants =
+    [ 's', 'ʃ', 'z', 'ʒ' ]
 
 
 {-| In linguistics, a liquid consonant or simply liquid is any of a class of
@@ -100,12 +109,20 @@ two, `/l/` and `/ɹ/`.
 
 -}
 allLiquids =
-    [ 'l', 'r', 'ɹ', 'ʁ', 'w', 'j' ]
+    [ 'l' -- Pronounced like "l" as in "lip"
+    , 'ɹ' -- Pronounced like "r" as in English "rat"
+    , 'r' -- Pronounced like "rr" as in Spanish "perro"
+    , 'ʁ' -- Pronounced like the French "r" in "rouge"
+    , 'w' -- Pronounced like "w" as in "wet"
+    , 'j' -- Pronounced like "y" as in "yes"
+    ]
 
 
 finalSets =
     [ [ 'm', 'n' ]
     , [ 's', 'k' ]
+    , [ 'c', 'ʃ' ]
+    , [ 'ð', 'θ' ]
     , [ 'm', 'n', 'ŋ' ]
     , [ 's', 'ʃ', 'z', 'ʒ' ]
     ]
@@ -136,11 +153,13 @@ syllableStructureTemplates =
     , [ Opt S, C, V, C ]
     , [ Opt S, C, V, F ]
     , [ Opt S, C, V, Opt C ]
+    , [ S, Opt C, V, C ]
+    , [ S, Opt C, V, F ]
+    , [ S, Opt C, V, Opt C ]
     , [ Opt C, V, F ]
     , [ Opt C, V, Opt C ]
     , [ Opt C, V, Opt F ]
     , [ Opt C, Opt L, V, C ]
-    , [ V, C ]
     , [ C, V, Opt L, Opt C ]
     , [ Opt C, V, Opt L, C ]
     , [ Opt C, V, L, Opt C ]
@@ -166,7 +185,7 @@ defaultLanguage : Language
 defaultLanguage =
     { consonants = allConsonants
     , vowels = allVowels
-    , sibilants = List.concat sibilantSets
+    , sibilants = allSibilants
     , liquids = allLiquids
     , finals = List.concat finalSets
     , syllableTemplates = syllableStructureTemplates
@@ -322,7 +341,9 @@ randomLanguage =
                 |> R.map (Set.fromList >> Set.toList)
 
         vowelsR =
-            RX.subsetMin 1 allVowels
+            RX.lowerWeightedRange (\x -> sqrt x) 2 (List.length allVowels // 5 * 4)
+                |> R.andThen (\n -> RX.subsetN n allVowels)
+                |> R.map (Set.fromList >> Set.toList)
     in
     syllableTemplatesR
         |> R.andThen
@@ -353,7 +374,7 @@ randomLanguage =
 
                     sibilantsR : R.Generator (List Char)
                     sibilantsR =
-                        RX.choice [] sibilantSets
+                        RX.subsetMin 1 allSibilants
                             |> ifClassIsRelevant S
 
                     liquidsR =
@@ -361,7 +382,8 @@ randomLanguage =
                             |> ifClassIsRelevant L
 
                     finalsR =
-                        RX.choice [] finalSets
+                        RX.subsetMinMax 1 2 finalSets
+                            |> R.map (List.concat >> Set.fromList >> Set.toList)
                             |> ifClassIsRelevant F
                 in
                 consonantsR
@@ -380,3 +402,11 @@ randomLanguage =
                             }
                         )
             )
+
+
+randomWord : Language -> R.Generator String
+randomWord lang =
+    R.int 1 4
+        |> R.andThen (\n -> R.list n (randomSyllable lang))
+        |> R.map (List.intersperse ".")
+        |> R.map String.concat
