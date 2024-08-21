@@ -4,7 +4,7 @@ module WordGen.Gen exposing (..)
 by Martin O'Leary.
 -}
 
-import Html exposing (Html, div, li, text, ul)
+import Html exposing (Html, div, figcaption, figure, li, text, ul)
 import Html.Attributes exposing (class)
 import Random as R
 import Random.Extra as RX
@@ -302,6 +302,7 @@ hasHardClusters lang prev syll =
                     , ( [ 'd' ], [ 'ʃ' ] )
                     , ( allApproximants, allApproximants )
                     , ( [ 't', 'd' ], [ 't', 'd' ] )
+                    , ( [ 'ð' ], [ 'ʃ' ] )
                     , ( [ 'ɣ' ], allConsonants )
                     , ( allConsonants, [ 'ɣ' ] )
                     ]
@@ -339,25 +340,28 @@ viewLanguage lang =
             else
                 []
     in
-    div [ class "wordgen-lang" ]
-        ([ div []
-            [ text "Syllable Template: "
-            , lang.syllableTemplate
-                |> List.map stringFromLetterClass
-                |> String.join ""
-                |> text
-            ]
-         ]
-            ++ ifNonEmptyList lang.sibilants
-                (div [] [ text "Sibilants: ", text (spacedChars lang.sibilants) ])
-            ++ ifNonEmptyList lang.approximants
-                (div [] [ text "Approximants: ", text (spacedChars lang.approximants) ])
-            ++ ifNonEmptyList lang.finals
-                (div [] [ text "Finals: ", text (spacedChars lang.finals) ])
-            ++ [ div [] [ text "Vowels: ", text (spacedChars lang.vowels) ]
-               , div [] [ text "Consonants: ", text (spacedChars lang.consonants) ]
-               ]
-        )
+    figure []
+        [ div [ class "wordgen-lang" ]
+            ([ div []
+                [ text "Syllable Template: "
+                , lang.syllableTemplate
+                    |> List.map stringFromLetterClass
+                    |> String.join ""
+                    |> text
+                ]
+             ]
+                ++ ifNonEmptyList lang.sibilants
+                    (div [] [ text "Sibilants: ", text (spacedChars lang.sibilants) ])
+                ++ ifNonEmptyList lang.approximants
+                    (div [] [ text "Approximants: ", text (spacedChars lang.approximants) ])
+                ++ ifNonEmptyList lang.finals
+                    (div [] [ text "Finals: ", text (spacedChars lang.finals) ])
+                ++ [ div [] [ text "Vowels: ", text (spacedChars lang.vowels) ]
+                   , div [] [ text "Consonants: ", text (spacedChars lang.consonants) ]
+                   ]
+            )
+        , figcaption [] [ text "C = Consonant, V = Vowel, S = Sibilant, A = Approximant, F = Final" ]
+        ]
 
 
 stringFromLetterClass : LetterClass -> String
