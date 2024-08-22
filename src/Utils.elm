@@ -39,6 +39,26 @@ tryCollect results =
             tryCollect rs |> Result.map (\rs2 -> t :: rs2)
 
 
+any : (a -> Bool) -> List a -> Bool
+any pred list =
+    case list of
+        [] ->
+            False
+
+        x :: xs ->
+            pred x || any pred xs
+
+
+all : (a -> Bool) -> List a -> Bool
+all pred list =
+    case list of
+        [] ->
+            True
+
+        x :: xs ->
+            pred x && all pred xs
+
+
 
 -- STRING
 

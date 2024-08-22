@@ -6,9 +6,11 @@ by Martin O'Leary.
 
 import Html exposing (Html, div, figcaption, figure, li, text, ul)
 import Html.Attributes exposing (class)
+import List.Nonempty as Nonempty exposing (Nonempty(..))
 import Random as R
 import Random.Extra as RX
 import Set
+import Utils
 import WordGen.Letters as L exposing (LetterClass(..))
 
 

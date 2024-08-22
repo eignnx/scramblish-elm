@@ -167,7 +167,6 @@ type Manner
     | Nasal
     | Liquid
     | Approximant ApproximantType
-    | SemiVowel
     | Sibilant
     | Trill
     | Tap
@@ -253,8 +252,8 @@ searchByMannar manner =
     searchBy
         (\articulation ->
             case articulation of
-                Consonant articulation ->
-                    articulation.manner == manner
+                Consonant a ->
+                    a.manner == manner
 
                 Vowel ->
                     False

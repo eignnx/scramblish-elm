@@ -11,7 +11,8 @@
             "elm/html": "1.0.0",
             "elm/random": "1.0.0",
             "elm/time": "1.0.0",
-            "elm-community/list-extra": "8.7.0"
+            "elm-community/list-extra": "8.7.0",
+            "mgold/elm-nonempty-list": "4.2.0"
         },
         "indirect": {
             "elm/json": "1.1.3",
