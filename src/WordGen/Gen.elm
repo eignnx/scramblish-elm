@@ -160,8 +160,8 @@ hasHardClusters lang prev syll =
                     , ( L.allApproximants, L.allApproximants )
                     , ( [ 't', 'd' ], [ 't', 'd' ] )
                     , ( [ 'ð' ], [ 'ʃ' ] )
-                    , ( [ 'ɣ' ], L.allConsonants |> Set.toList )
-                    , ( L.allConsonants |> Set.toList, [ 'ɣ' ] )
+                    , ( [ 'ɣ' ], L.allConsonants )
+                    , ( L.allConsonants, [ 'ɣ' ] )
                     ]
             )
                 || hasHardClusters lang curr rest
@@ -251,8 +251,7 @@ randomLanguage =
             RX.choice [] syllableStructureTemplates
 
         consonantsR =
-            RX.subsetMinMax 4 (Set.size L.allConsonants // 5 * 4) (Set.toList L.allConsonants)
-                |> R.map (Set.fromList >> Set.toList)
+            L.randomConsonants
 
         vowelsR =
             RX.lowerWeightedRange (\x -> sqrt x) 2 (List.length L.allVowels // 5 * 4)

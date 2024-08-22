@@ -1,6 +1,8 @@
 module WordGen.Letters exposing (..)
 
 import Dict exposing (Dict)
+import Random
+import Random.Extra
 import Set
 
 
@@ -46,12 +48,6 @@ englishFriendlyConsonants =
 
 englishFriendlyConsonantWeight =
     7
-
-
-allConsonants : Set.Set Char
-allConsonants =
-    Set.fromList
-        (allBaseConsonants ++ allSibilants ++ allApproximants ++ List.concat finalSets)
 
 
 allVowels =
@@ -152,12 +148,16 @@ finalSets =
 
 
 type LetterArticulation
-    = Consonant
-        { manner : Manner
-        , place : Place
-        , voicing : Voicing
-        }
+    = Consonant ConsonantArticulation
     | Vowel
+
+
+type alias ConsonantArticulation =
+    { manner : Manner
+    , place : Place
+    , voicing : Voicing
+    , englishFriendly : Bool
+    }
 
 
 type Manner
@@ -199,33 +199,33 @@ type Voicing
 charData : Dict Char LetterArticulation
 charData =
     Dict.fromList
-        [ ( 't', Consonant { voicing = Voiceless, place = Alveolar, manner = Plosive } )
-        , ( 'd', Consonant { voicing = Voiced, place = Alveolar, manner = Plosive } )
-        , ( 'k', Consonant { voicing = Voiceless, place = Velar, manner = Plosive } )
-        , ( 'g', Consonant { voicing = Voiced, place = Velar, manner = Plosive } )
-        , ( 'p', Consonant { voicing = Voiceless, place = Bilabial, manner = Plosive } )
-        , ( 'b', Consonant { voicing = Voiced, place = Bilabial, manner = Plosive } )
-        , ( 'f', Consonant { voicing = Voiceless, place = Labiodental, manner = Fricative } )
-        , ( 'v', Consonant { voicing = Voiced, place = Labiodental, manner = Fricative } )
-        , ( 'θ', Consonant { voicing = Voiceless, place = Dental, manner = Fricative } )
-        , ( 'ð', Consonant { voicing = Voiced, place = Dental, manner = Fricative } )
-        , ( 'x', Consonant { voicing = Voiceless, place = Velar, manner = Fricative } )
-        , ( 'ɣ', Consonant { voicing = Voiced, place = Velar, manner = Fricative } )
-        , ( 's', Consonant { voicing = Voiceless, place = Alveolar, manner = Fricative } )
-        , ( 'z', Consonant { voicing = Voiced, place = Alveolar, manner = Fricative } )
-        , ( 'ʃ', Consonant { voicing = Voiceless, place = Postalveolar, manner = Fricative } )
-        , ( 'ʒ', Consonant { voicing = Voiced, place = Postalveolar, manner = Fricative } )
-        , ( 'm', Consonant { voicing = Voiced, place = Bilabial, manner = Nasal } )
-        , ( 'n', Consonant { voicing = Voiced, place = Alveolar, manner = Nasal } )
-        , ( 'ŋ', Consonant { voicing = Voiced, place = Velar, manner = Nasal } )
-        , ( 'l', Consonant { voicing = Voiced, place = Alveolar, manner = Approximant Lateral } )
-        , ( 'ɹ', Consonant { voicing = Voiced, place = Alveolar, manner = Approximant Rhotic } )
-        , ( 'r', Consonant { voicing = Voiced, place = Alveolar, manner = Trill } )
-        , ( 'ɾ', Consonant { voicing = Voiced, place = Alveolar, manner = Tap } )
-        , ( 'ʁ', Consonant { voicing = Voiced, place = Uvular, manner = Approximant Rhotic } )
-        , ( 'w', Consonant { voicing = Voiced, place = Bilabial, manner = Approximant SemiVowel } )
-        , ( 'j', Consonant { voicing = Voiced, place = Palatal, manner = Approximant SemiVowel } )
-        , ( 'ʔ', Consonant { voicing = Voiceless, place = Glottal, manner = Plosive } )
+        [ ( 't', Consonant { voicing = Voiceless, place = Alveolar, manner = Plosive, englishFriendly = True } )
+        , ( 'd', Consonant { voicing = Voiced, place = Alveolar, manner = Plosive, englishFriendly = True } )
+        , ( 'k', Consonant { voicing = Voiceless, place = Velar, manner = Plosive, englishFriendly = True } )
+        , ( 'g', Consonant { voicing = Voiced, place = Velar, manner = Plosive, englishFriendly = True } )
+        , ( 'p', Consonant { voicing = Voiceless, place = Bilabial, manner = Plosive, englishFriendly = True } )
+        , ( 'b', Consonant { voicing = Voiced, place = Bilabial, manner = Plosive, englishFriendly = True } )
+        , ( 'f', Consonant { voicing = Voiceless, place = Labiodental, manner = Fricative, englishFriendly = True } )
+        , ( 'v', Consonant { voicing = Voiced, place = Labiodental, manner = Fricative, englishFriendly = True } )
+        , ( 'θ', Consonant { voicing = Voiceless, place = Dental, manner = Fricative, englishFriendly = True } )
+        , ( 'ð', Consonant { voicing = Voiced, place = Dental, manner = Fricative, englishFriendly = True } )
+        , ( 'x', Consonant { voicing = Voiceless, place = Velar, manner = Fricative, englishFriendly = False } )
+        , ( 'ɣ', Consonant { voicing = Voiced, place = Velar, manner = Fricative, englishFriendly = False } )
+        , ( 's', Consonant { voicing = Voiceless, place = Alveolar, manner = Fricative, englishFriendly = True } )
+        , ( 'z', Consonant { voicing = Voiced, place = Alveolar, manner = Fricative, englishFriendly = True } )
+        , ( 'ʃ', Consonant { voicing = Voiceless, place = Postalveolar, manner = Fricative, englishFriendly = True } )
+        , ( 'ʒ', Consonant { voicing = Voiced, place = Postalveolar, manner = Fricative, englishFriendly = True } )
+        , ( 'm', Consonant { voicing = Voiced, place = Bilabial, manner = Nasal, englishFriendly = True } )
+        , ( 'n', Consonant { voicing = Voiced, place = Alveolar, manner = Nasal, englishFriendly = True } )
+        , ( 'ŋ', Consonant { voicing = Voiced, place = Velar, manner = Nasal, englishFriendly = True } )
+        , ( 'l', Consonant { voicing = Voiced, place = Alveolar, manner = Approximant Lateral, englishFriendly = True } )
+        , ( 'ɹ', Consonant { voicing = Voiced, place = Alveolar, manner = Approximant Rhotic, englishFriendly = True } )
+        , ( 'r', Consonant { voicing = Voiced, place = Alveolar, manner = Trill, englishFriendly = False } )
+        , ( 'ɾ', Consonant { voicing = Voiced, place = Alveolar, manner = Tap, englishFriendly = False } )
+        , ( 'ʁ', Consonant { voicing = Voiced, place = Uvular, manner = Approximant Rhotic, englishFriendly = False } )
+        , ( 'w', Consonant { voicing = Voiced, place = Bilabial, manner = Approximant SemiVowel, englishFriendly = True } )
+        , ( 'j', Consonant { voicing = Voiced, place = Palatal, manner = Approximant SemiVowel, englishFriendly = True } )
+        , ( 'ʔ', Consonant { voicing = Voiceless, place = Glottal, manner = Plosive, englishFriendly = False } )
         , ( 'a', Vowel )
         , ( 'e', Vowel )
         , ( 'i', Vowel )
@@ -296,7 +296,7 @@ letterSatisfies predicate letter =
             False
 
 
-consonantSatisfies : ({ manner : Manner, place : Place, voicing : Voicing } -> Bool) -> Char -> Bool
+consonantSatisfies : (ConsonantArticulation -> Bool) -> Char -> Bool
 consonantSatisfies predicate letter =
     case Dict.get letter charData of
         Just (Consonant articulation) ->
@@ -325,3 +325,84 @@ letterHasVoicing voicing letter =
     consonantSatisfies
         (\articulation -> articulation.voicing == voicing)
         letter
+
+
+oppositeVoicing : Voicing -> Voicing
+oppositeVoicing voicing =
+    case voicing of
+        Voiced ->
+            Voiceless
+
+        Voiceless ->
+            Voiced
+
+
+oppositeVoicingPair : Char -> List Char
+oppositeVoicingPair letterX =
+    case Dict.get letterX charData of
+        Just (Consonant articulationX) ->
+            letterX
+                :: searchBy
+                    (\letterArticulationY ->
+                        case letterArticulationY of
+                            Consonant articulationY ->
+                                True
+                                    && (articulationY.voicing == oppositeVoicing articulationX.voicing)
+                                    && (articulationY.manner == articulationX.manner)
+                                    && (articulationY.place == articulationX.place)
+
+                            Vowel ->
+                                False
+                    )
+
+        _ ->
+            []
+
+
+
+-- LETTER SETS
+
+
+allConsonants : List Char
+allConsonants =
+    searchBy
+        (\articulation ->
+            case articulation of
+                Consonant _ ->
+                    True
+
+                Vowel ->
+                    False
+        )
+
+
+
+-- GENERATORS
+
+
+randomConsonants : Random.Generator (List Char)
+randomConsonants =
+    charData
+        |> Dict.toList
+        |> List.filterMap
+            (\tup ->
+                case tup of
+                    ( letter, Consonant articulation ) ->
+                        Just ( letter, articulation )
+
+                    _ ->
+                        Nothing
+            )
+        |> List.partition (\( _, a ) -> a.englishFriendly)
+        |> (\( enFriendly, enUnfriendly ) ->
+                []
+                    ++ List.concat (List.repeat englishFriendlyConsonantWeight enFriendly)
+                    ++ enUnfriendly
+           )
+        |> List.map Tuple.first
+        -- Choose between 2count and 80% of the consonants.
+        |> Random.Extra.subsetMinMax 2 (List.length allConsonants // 5 * 4)
+        -- Ensure `d` is chosen if `t` is chosen and vice versa.
+        |> Random.map (List.concatMap (\c -> oppositeVoicingPair c))
+        |> Random.map (Set.fromList >> Set.toList)
+        |> Random.map (Debug.log "consonants")
