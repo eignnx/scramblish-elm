@@ -105,6 +105,22 @@ choiceFromLetterClass lang class =
                     )
 
 
+randomSyllable : Language -> R.Generator String
+randomSyllable lang =
+    lang.syllableTemplate
+        |> RX.flattenList (choiceFromLetterClass lang)
+        |> R.map (\cs -> List.filterMap identity cs)
+        |> R.map String.fromList
+        |> R.andThen
+            (\syll ->
+                if invalidSyllable lang syll then
+                    randomSyllable lang
+
+                else
+                    R.constant syll
+            )
+
+
 invalidSyllable : Language -> String -> Bool
 invalidSyllable lang syll =
     syll
@@ -154,7 +170,7 @@ hasHardClusters lang prev syll =
         curr :: rest ->
             (( prev, curr )
                 |> disallowedClusters
-                    [ ( [ 's', 'ʃ', 'v' ], [ 's', 'ʃ' ] )
+                    [ ( [ 's', 'ʃ', 'v' ], [ 's', 'ʃ', 'ʒ' ] )
                     , ( [ 'z', 'ʒ', 'f' ], [ 'z', 'ʒ' ] )
                     , ( [ 'd' ], [ 'ʃ' ] )
                     , ( L.allApproximants, L.allApproximants )
@@ -165,22 +181,6 @@ hasHardClusters lang prev syll =
                     ]
             )
                 || hasHardClusters lang curr rest
-
-
-randomSyllable : Language -> R.Generator String
-randomSyllable lang =
-    lang.syllableTemplate
-        |> RX.flattenList (choiceFromLetterClass lang)
-        |> R.map (\cs -> List.filterMap identity cs)
-        |> R.map String.fromList
-        |> R.andThen
-            (\syll ->
-                if invalidSyllable lang syll then
-                    randomSyllable lang
-
-                else
-                    R.constant syll
-            )
 
 
 viewLanguage : Language -> Html msg
