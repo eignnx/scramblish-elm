@@ -400,8 +400,8 @@ randomConsonants =
                     ++ enUnfriendly
            )
         |> List.map Tuple.first
-        -- Choose between 2count and 80% of the consonants.
-        |> Random.Extra.subsetMinMax 2 (List.length allConsonants // 5 * 4)
+        -- Choose between 2count and 40% of the consonants.
+        |> Random.Extra.subsetMinMax 2 (List.length allConsonants // 5 * 2)
         -- Ensure `d` is chosen if `t` is chosen and vice versa.
         |> Random.map (List.concatMap (\c -> oppositeVoicingPair c))
         |> Random.map (Set.fromList >> Set.toList)
