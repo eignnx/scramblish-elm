@@ -4,6 +4,7 @@ import List.Extra
 import List.Nonempty as Nonempty exposing (Nonempty(..))
 import Random as R
 import Random.Extra as RX
+import Set
 import Utils
 import WordGen.Letters as L exposing (LetterClass(..))
 
@@ -18,6 +19,12 @@ type alias Language =
     }
 
 
+consonantsOfLang : Language -> Set.Set Char
+consonantsOfLang lang =
+    (lang.consonants ++ lang.sibilants ++ lang.approximants ++ lang.finals)
+        |> Set.fromList
+
+
 type alias Syllable a =
     { onset : List a
     , nucleus : Nonempty a
@@ -25,11 +32,24 @@ type alias Syllable a =
     }
 
 
-restrictionChoices : List { name : String, rule : Syllable Char -> Bool }
+type alias SyllableRestriction =
+    { name : String
+    , importance : RestrictionImportance
+    , rule : Language -> Syllable Char -> Bool
+    }
+
+
+type RestrictionImportance
+    = Required
+    | EnglishLike
+
+
+restrictionChoices : List SyllableRestriction
 restrictionChoices =
     [ { name = "Leading NG"
+      , importance = EnglishLike
       , rule =
-            \syll ->
+            \_ syll ->
                 case syll.onset of
                     first :: _ ->
                         first == 'ŋ'
@@ -38,13 +58,46 @@ restrictionChoices =
                         False
       }
     , { name = "No H at end of coda"
-      , rule = \syll -> List.member 'h' syll.coda
+      , importance = EnglishLike
+      , rule = \_ syll -> List.member 'h' syll.coda
       }
     , { name = "No semivowel in coda"
-      , rule = \syll -> Utils.any (L.letterHasManner (L.Approximant L.SemiVowel)) syll.coda
+      , importance = EnglishLike
+      , rule = \_ syll -> Utils.any (L.letterHasManner (L.Approximant L.SemiVowel)) syll.coda
       }
+    , { name = "No duplicate consonants"
+      , importance = Required
+      , rule =
+            \_ syll ->
+                String.toList (renderSyllable syll)
+                    |> Utils.adjacentPairs
+                    |> Utils.any (\( a, b ) -> a == b && L.isConsonant a)
+      }
+    , { name = "No difficult pairs"
+      , importance = EnglishLike
+      , rule =
+            \lang syll ->
+                let
+                    rendered : List Char
+                    rendered =
+                        renderSyllable syll |> String.toList
 
-    -- , { name = "" }
+                    pairRestrictions : List ( List Char, List Char ) -> ( Char, Char ) -> Bool
+                    pairRestrictions restrictions ( a, b ) =
+                        restrictions
+                            |> Utils.any (\( aList, bList ) -> List.member a aList && List.member b bList)
+                in
+                rendered
+                    |> Utils.adjacentPairs
+                    |> Utils.any
+                        (pairRestrictions
+                            [ ( [ 'ŋ' ], lang.consonants )
+                            , ( lang.sibilants, lang.sibilants )
+                            , ( lang.approximants, lang.approximants )
+                            , ( lang.finals, lang.finals )
+                            ]
+                        )
+      }
     ]
 
 
@@ -74,6 +127,9 @@ stringFromLetterClass c =
 
         F ->
             "F"
+
+        Y ->
+            "Y"
 
         Opt inner ->
             "[" ++ stringFromLetterClass inner ++ "]"
@@ -162,7 +218,23 @@ randomSyllable lang =
 
         nucleusR : R.Generator (Nonempty Char)
         nucleusR =
-            template.nucleus |> RX.flattenMaybeNonempty '￼' (choiceFromLetterClass lang)
+            template.nucleus
+                |> RX.flattenMaybeNonempty '￼'
+                    (\class ->
+                        case class of
+                            V ->
+                                -- Allow syllabic consonant in place of vowel
+                                RX.choice '￼'
+                                    ([]
+                                        ++ Debug.log "syllabic consonants" (Set.toList (Set.intersect L.syllabicConsonants (consonantsOfLang lang)))
+                                        -- But it's not as likely as a vowel.
+                                        ++ List.concat (List.repeat (List.length lang.vowels) lang.vowels)
+                                    )
+                                    |> R.map Just
+
+                            _ ->
+                                choiceFromLetterClass lang class
+                    )
 
         codaR : R.Generator (List Char)
         codaR =
@@ -178,11 +250,7 @@ randomSyllable lang =
             (\syll ->
                 let
                     passRestrictions =
-                        List.all
-                            (\{ rule } ->
-                                not (rule syll)
-                            )
-                            restrictionChoices
+                        restrictionChoices |> List.all (\{ rule } -> not (rule lang syll))
                 in
                 if passRestrictions then
                     R.constant syll
@@ -209,6 +277,13 @@ choiceFromLetterClass lang class =
 
         F ->
             RX.choice '￼' lang.finals |> R.map Just
+
+        Y ->
+            RX.choice '￼'
+                (Set.intersect L.syllabicConsonants (consonantsOfLang lang)
+                    |> Set.toList
+                )
+                |> R.map Just
 
         Opt c ->
             RX.chance 0.5

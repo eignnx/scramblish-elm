@@ -60,6 +60,21 @@ all pred list =
             pred x && all pred xs
 
 
+adjacentPairs : List a -> List ( a, a )
+adjacentPairs list =
+    case list of
+        [] ->
+            []
+
+        x :: xs ->
+            case xs of
+                [] ->
+                    []
+
+                y :: _ ->
+                    ( x, y ) :: adjacentPairs xs
+
+
 
 -- STRING
 

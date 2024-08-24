@@ -12,6 +12,7 @@ type LetterClass
     | S -- Sibilant
     | A -- Approximant
     | F -- Final
+    | Y -- S(y)llabic Consonant
     | Opt LetterClass -- An optional letter class
 
 
@@ -196,6 +197,10 @@ type Voicing
     | Voiceless
 
 
+
+-- PROPERTIES
+
+
 charData : Dict Char LetterArticulation
 charData =
     Dict.fromList
@@ -306,6 +311,11 @@ consonantSatisfies predicate letter =
             False
 
 
+isConsonant : Char -> Bool
+isConsonant letter =
+    consonantSatisfies (\_ -> True) letter
+
+
 letterHasManner : Manner -> Char -> Bool
 letterHasManner manner letter =
     consonantSatisfies
@@ -373,6 +383,17 @@ allConsonants =
 
                 Vowel ->
                     False
+        )
+
+
+syllabicConsonants : Set.Set Char
+syllabicConsonants =
+    Set.fromList
+        ([]
+            ++ searchByMannar (Approximant Rhotic)
+            ++ searchByMannar (Approximant Lateral)
+            ++ searchByMannar Fricative
+            ++ searchByMannar Nasal
         )
 
 

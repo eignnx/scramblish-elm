@@ -66,36 +66,6 @@ defaultLanguage =
     }
 
 
-choiceFromLetterClass : Language -> LetterClass -> R.Generator (Maybe Char)
-choiceFromLetterClass lang class =
-    case class of
-        C ->
-            RX.choice '￼' lang.consonants |> R.map Just
-
-        V ->
-            RX.choice '￼' lang.vowels |> R.map Just
-
-        S ->
-            RX.choice '￼' lang.sibilants |> R.map Just
-
-        A ->
-            RX.choice '￼' lang.approximants |> R.map Just
-
-        F ->
-            RX.choice '￼' lang.finals |> R.map Just
-
-        Opt c ->
-            RX.chance 0.5
-                |> R.andThen
-                    (\b ->
-                        if b then
-                            choiceFromLetterClass lang c
-
-                        else
-                            R.constant Nothing
-                    )
-
-
 invalidSyllable : Language -> String -> Bool
 invalidSyllable lang syll =
     syll
