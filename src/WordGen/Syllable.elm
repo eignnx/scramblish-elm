@@ -16,6 +16,7 @@ type alias Language =
     , sibilants : List Char
     , approximants : List Char
     , finals : List Char
+    , syllabicConsonantLikelihood : Float
     }
 
 
@@ -153,15 +154,6 @@ viewSyllableTemplate template =
         |> String.concat
 
 
-
--- ([]
---     ++ (template.coda |> List.map stringFromLetterClass)
---     ++ (Nonempty.toList template.nucleus |> List.map stringFromLetterClass)
---     ++ (template.onset |> List.map stringFromLetterClass)
--- )
---     |> String.concat
-
-
 mapSyllable :
     { onset : List a -> List b
     , nucleus : Nonempty a -> Nonempty b
@@ -223,13 +215,21 @@ randomSyllable lang =
                     (\class ->
                         case class of
                             V ->
-                                -- Allow syllabic consonant in place of vowel
-                                RX.choice '￼'
-                                    ([]
-                                        ++ Debug.log "syllabic consonants" (Set.toList (Set.intersect L.syllabicConsonants (consonantsOfLang lang)))
-                                        -- But it's not as likely as a vowel.
-                                        ++ List.concat (List.repeat (List.length lang.vowels) lang.vowels)
-                                    )
+                                let
+                                    langSyllabicConsonants =
+                                        Debug.log "syllabic consonants"
+                                            (Set.toList (Set.intersect L.syllabicConsonants (consonantsOfLang lang)))
+                                in
+                                R.float 0 1
+                                    |> R.andThen
+                                        (\pct ->
+                                            if pct < lang.syllabicConsonantLikelihood then
+                                                -- Allow syllabic consonant in place of vowel
+                                                RX.choice '￼' langSyllabicConsonants
+
+                                            else
+                                                RX.choice '￼' lang.vowels
+                                        )
                                     |> R.map Just
 
                             _ ->
@@ -299,7 +299,8 @@ choiceFromLetterClass lang class =
 
 debugSyllableFlag : Bool
 debugSyllableFlag =
-    True
+    -- True
+    False
 
 
 ifDebugSyllableFlag : a -> a -> a

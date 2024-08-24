@@ -58,11 +58,12 @@ maxSyllableTemplates =
 defaultLanguage : Language
 defaultLanguage =
     { consonants = L.allBaseConsonants
-    , vowels = L.allVowels
+    , vowels = L.allVowels |> Set.toList
     , sibilants = L.allSibilants
     , approximants = L.allApproximants
     , finals = List.concat L.finalSets
     , syllableTemplate = Syllable.defaultSyllableTemplate
+    , syllabicConsonantLikelihood = 0.5
     }
 
 
@@ -159,6 +160,11 @@ viewLanguage lang =
                     (div [] [ text "Finals: ", text (spacedChars lang.finals) ])
                 ++ [ div [] [ text "Vowels: ", text (spacedChars lang.vowels) ]
                    , div [] [ text "Consonants: ", text (spacedChars lang.consonants) ]
+                   , div []
+                        [ text "Syllabic Consonant Likelihood: "
+                        , text
+                            ((lang.syllabicConsonantLikelihood * 100 |> round |> String.fromInt) ++ "%")
+                        ]
                    ]
             )
         , figcaption [] [ text "C = Consonant, V = Vowel, S = Sibilant, A = Approximant, F = Final" ]
@@ -176,8 +182,8 @@ randomLanguage =
             L.randomConsonants
 
         vowelsR =
-            RX.lowerWeightedRange (\x -> sqrt x) 2 (List.length L.allVowels // 5 * 4)
-                |> R.andThen (\n -> RX.subsetN n L.allVowels)
+            RX.lowerWeightedRange (\x -> sqrt x) 2 (Set.size L.allVowels // 5 * 4)
+                |> R.andThen (\n -> RX.subsetN n (Set.toList L.allVowels))
                 |> R.map (Set.fromList >> Set.toList)
     in
     syllableTemplateR
@@ -221,20 +227,25 @@ randomLanguage =
                         RX.subsetMinMax 1 2 L.finalSets
                             |> R.map (List.concat >> Set.fromList >> Set.toList)
                             |> ifClassIsRelevant F
+
+                    syllabicConsonantLiklihoodR =
+                        R.float 0 1 |> R.map (\x -> x ^ 9)
                 in
                 consonantsR
                     |> RX.mapPair vowelsR
                     |> RX.mapPair sibilantsR
                     |> RX.mapPair approximantsR
                     |> RX.mapPair finalsR
+                    |> RX.mapPair syllabicConsonantLiklihoodR
                     |> R.map
-                        (\( ( ( ( consonants, vowels ), sibilants ), approximants ), finals ) ->
+                        (\( ( ( ( ( consonants, vowels ), sibilants ), approximants ), finals ), syllabicConsonantLikelihood ) ->
                             { consonants = consonants
                             , vowels = vowels
                             , sibilants = sibilants
                             , approximants = approximants
                             , finals = finals
                             , syllableTemplate = syllableTemplate
+                            , syllabicConsonantLikelihood = syllabicConsonantLikelihood
                             }
                         )
             )

@@ -51,14 +51,6 @@ englishFriendlyConsonantWeight =
     7
 
 
-allVowels =
-    String.toList
-        "aaeeiioouu"
-        -- Capitalized vowels stand for language-specific vowels. Will be replaced
-        -- in the orthography stage.
-        ++ [ 'A', 'E', 'I' ]
-
-
 {-| Sibilants (from Latin: sībilāns : 'hissing') are fricative consonants of
 higher amplitude and pitch, made by directing a stream of air with the tongue
 towards the teeth.[1] Examples of sibilants are the consonants at the beginning
@@ -150,7 +142,7 @@ finalSets =
 
 type LetterArticulation
     = Consonant ConsonantArticulation
-    | Vowel
+    | Vowel { enExample : String }
 
 
 type alias ConsonantArticulation =
@@ -231,14 +223,16 @@ charData =
         , ( 'w', Consonant { voicing = Voiced, place = Bilabial, manner = Approximant SemiVowel, englishFriendly = True } )
         , ( 'j', Consonant { voicing = Voiced, place = Palatal, manner = Approximant SemiVowel, englishFriendly = True } )
         , ( 'ʔ', Consonant { voicing = Voiceless, place = Glottal, manner = Plosive, englishFriendly = False } )
-        , ( 'a', Vowel )
-        , ( 'e', Vowel )
-        , ( 'i', Vowel )
-        , ( 'o', Vowel )
-        , ( 'u', Vowel )
-        , ( 'A', Vowel )
-        , ( 'E', Vowel )
-        , ( 'I', Vowel )
+        , ( 'i', Vowel { enExample = "b[ee]t" } )
+        , ( 'ɪ', Vowel { enExample = "b[i]t" } )
+        , ( 'ʊ', Vowel { enExample = "b[oo]k" } )
+        , ( 'ɯ', Vowel { enExample = "b[oo]t" } )
+        , ( 'ə', Vowel { enExample = "sof[a]" } )
+        , ( 'ɛ', Vowel { enExample = "b[e]d" } )
+        , ( 'æ', Vowel { enExample = "c[a]t" } )
+        , ( 'ɑ', Vowel { enExample = "f[a]ther" } )
+        , ( 'ʌ', Vowel { enExample = "h[u]t" } )
+        , ( 'e', Vowel { enExample = "s[ay]" } )
         ]
 
 
@@ -260,7 +254,7 @@ searchByMannar manner =
                 Consonant a ->
                     a.manner == manner
 
-                Vowel ->
+                Vowel _ ->
                     False
         )
 
@@ -273,7 +267,7 @@ searchByPlace place =
                 Consonant a ->
                     a.place == place
 
-                Vowel ->
+                Vowel _ ->
                     False
         )
 
@@ -286,7 +280,7 @@ searchByVoicing voicing =
                 Consonant a ->
                     a.voicing == voicing
 
-                Vowel ->
+                Vowel _ ->
                     False
         )
 
@@ -361,7 +355,7 @@ oppositeVoicingPair letterX =
                                     && (articulationY.manner == articulationX.manner)
                                     && (articulationY.place == articulationX.place)
 
-                            Vowel ->
+                            Vowel _ ->
                                 False
                     )
 
@@ -381,7 +375,7 @@ allConsonants =
                 Consonant _ ->
                     True
 
-                Vowel ->
+                Vowel _ ->
                     False
         )
 
@@ -395,6 +389,22 @@ syllabicConsonants =
             ++ searchByMannar Fricative
             ++ searchByMannar Nasal
         )
+
+
+allVowels : Set.Set Char
+allVowels =
+    charData
+        |> Dict.toList
+        |> List.filterMap
+            (\tup ->
+                case tup of
+                    ( letter, Vowel _ ) ->
+                        Just letter
+
+                    _ ->
+                        Nothing
+            )
+        |> Set.fromList
 
 
 
