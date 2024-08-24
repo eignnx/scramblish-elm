@@ -222,16 +222,16 @@ charData =
         , ( 'w', Consonant { voicing = Voiced, place = Bilabial, manner = Approximant SemiVowel, englishFriendly = True } )
         , ( 'j', Consonant { voicing = Voiced, place = Palatal, manner = Approximant SemiVowel, englishFriendly = True } )
         , ( 'ʔ', Consonant { voicing = Voiceless, place = Glottal, manner = Plosive, englishFriendly = False } )
-        , ( 'i', Vowel { enExample = "b[ee]t" } )
-        , ( 'ɪ', Vowel { enExample = "b[i]t" } )
+        , ( 'i', Vowel { enExample = "[ea]stern" } )
+        , ( 'ɪ', Vowel { enExample = "[i]gloo" } )
         , ( 'ʊ', Vowel { enExample = "b[oo]k" } )
-        , ( 'ɯ', Vowel { enExample = "b[oo]t" } )
+        , ( 'u', Vowel { enExample = "b[oo]t" } )
         , ( 'ə', Vowel { enExample = "sof[a]" } )
-        , ( 'ɛ', Vowel { enExample = "b[e]d" } )
+        , ( 'ɛ', Vowel { enExample = "[e]gg" } )
         , ( 'æ', Vowel { enExample = "c[a]t" } )
         , ( 'ɑ', Vowel { enExample = "f[a]ther" } )
-        , ( 'ʌ', Vowel { enExample = "h[u]t" } )
-        , ( 'e', Vowel { enExample = "s[ay]" } )
+        , ( 'ʌ', Vowel { enExample = "[u]dder" } )
+        , ( 'e', Vowel { enExample = "[a]ble" } )
         ]
 
 

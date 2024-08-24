@@ -4,7 +4,7 @@ module WordGen.Gen exposing (..)
 by Martin O'Leary.
 -}
 
-import Html exposing (Html, div, figcaption, figure, li, text, ul)
+import Html exposing (Html, div, figcaption, figure, li, span, text, ul)
 import Html.Attributes exposing (class)
 import List.Nonempty as Nonempty exposing (Nonempty(..))
 import Random as R
@@ -229,7 +229,9 @@ randomLanguage =
                             |> ifClassIsRelevant F
 
                     syllabicConsonantLiklihoodR =
-                        R.float 0 1 |> R.map (\x -> x ^ 9)
+                        R.float 0 1
+                            |> R.map (\x -> 0.02 * (1 / (1 - x) - 1))
+                            |> R.map (clamp 0 1)
                 in
                 consonantsR
                     |> RX.mapPair vowelsR
@@ -251,10 +253,13 @@ randomLanguage =
             )
 
 
-randomWord : Syllable.Language -> R.Generator String
+randomWord : Syllable.Language -> R.Generator (List Syllable.Syll)
 randomWord lang =
     R.int 1 4
         |> R.andThen (\n -> R.list n (Syllable.randomSyllable lang))
-        |> R.map (List.map Syllable.renderSyllable)
-        |> R.map (List.intersperse ".")
-        |> R.map String.concat
+
+
+viewWord : List Syllable.Syll -> Html msg
+viewWord sylls =
+    List.intersperse (text ".") (List.map Syllable.viewSyllable sylls)
+        |> span []

@@ -44,8 +44,8 @@ type alias Model =
     , scramblishGrammar : GrammarMut
     , querySoln : Maybe (Result T.SolveError T.USet)
     , wordGenLanguage : Syllable.Language
-    , sampleSyllables : List String
-    , sampleWords : List String
+    , sampleSyllables : List Syllable.Syll
+    , sampleWords : List (List Syllable.Syll)
     }
 
 
@@ -95,11 +95,11 @@ type Msg
     | RandomSolve
     | RandomSolution T.SolnStream
     | RandomSyllables
-    | RandomSyllablesGenerated (List String)
+    | RandomSyllablesGenerated (List Syllable.Syll)
     | RandomizeWordGenLanguage
     | WordGenLanguageGenerated Syllable.Language
     | RandomWords
-    | RandomWordsGenerated (List String)
+    | RandomWordsGenerated (List (List Syllable.Syll))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -171,12 +171,11 @@ update msg model =
             ( model
             , Random.generate
                 RandomSyllablesGenerated
-                (Random.list 50 (Syllable.randomSyllable model.wordGenLanguage)
-                    |> Random.map (List.map Syllable.renderSyllable))
+                (Random.list 50 (Syllable.randomSyllable model.wordGenLanguage))
             )
 
         RandomSyllablesGenerated syllables ->
-            ( { model | sampleSyllables = (Set.fromList >> Set.toList) syllables }
+            ( { model | sampleSyllables = syllables }
             , Cmd.none
             )
 
@@ -203,7 +202,7 @@ update msg model =
             )
 
         RandomWordsGenerated words ->
-            ( { model | sampleWords = (Set.fromList >> Set.toList) words }, Cmd.none )
+            ( { model | sampleWords = words }, Cmd.none )
 
 
 randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg
@@ -246,9 +245,23 @@ view model =
                 , button [ onClick RandomizeWordGenLanguage ] [ text "⟳ Regenerate WordGen Language" ]
                 , W.viewLanguage model.wordGenLanguage
                 , button [ onClick RandomSyllables ] [ text "Random Syllables" ]
-                , p [] (model.sampleSyllables |> List.map (\s -> span [ class "sample-syllable" ] [ text ("/\u{2060}" ++ s ++ "\u{2060}/ ") ]))
+                , p []
+                    (model.sampleSyllables
+                        |> List.map
+                            (\s ->
+                                span [ class "sample-syllable" ]
+                                    [ text "/\u{2060}", Syllable.viewSyllable s, text "\u{2060}/ " ]
+                            )
+                    )
                 , button [ onClick RandomWords ] [ text "Random Words" ]
-                , p [] (model.sampleWords |> List.map (\s -> span [ class "sample-word" ] [ text ("/\u{2060}" ++ s ++ "\u{2060}/ ") ]))
+                , p []
+                    (model.sampleWords
+                        |> List.map
+                            (\w ->
+                                span [ class "sample-word" ]
+                                    [ text "/\u{2060}", W.viewWord w, text "\u{2060}/ " ]
+                            )
+                    )
                 ]
             , details [ attribute "open" "false" ]
                 (summary [] [ text "Query Tests" ]

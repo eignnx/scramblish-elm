@@ -1,5 +1,8 @@
 module WordGen.Syllable exposing (..)
 
+import Dict
+import Html as H
+import Html.Attributes as HA
 import List.Extra
 import List.Nonempty as Nonempty exposing (Nonempty(..))
 import Random as R
@@ -33,10 +36,14 @@ type alias Syllable a =
     }
 
 
+type alias Syll =
+    Syllable Char
+
+
 type alias SyllableRestriction =
     { name : String
     , importance : RestrictionImportance
-    , rule : Language -> Syllable Char -> Bool
+    , rule : Language -> Syll -> Bool
     }
 
 
@@ -195,7 +202,7 @@ randomSyllableTemplate =
         )
 
 
-randomSyllable : Language -> R.Generator (Syllable Char)
+randomSyllable : Language -> R.Generator Syll
 randomSyllable lang =
     let
         template =
@@ -302,7 +309,7 @@ ifDebugSyllableFlag a b =
         b
 
 
-renderSyllable : Syllable Char -> String
+renderSyllable : Syll -> String
 renderSyllable syll =
     List.Extra.interweave
         (ifDebugSyllableFlag
@@ -319,3 +326,30 @@ renderSyllable syll =
         ]
         |> List.concat
         |> String.fromList
+
+
+viewSyllable : Syll -> H.Html msg
+viewSyllable syll =
+    let
+        -- render vowels with a `title` of their english example
+        renderChar : Char -> H.Html msg
+        renderChar c =
+            case Dict.get c L.charData of
+                Just (L.Vowel { enExample }) ->
+                    let
+                        title =
+                            "'" ++ String.fromChar c ++ "' as in '" ++ enExample ++ "'"
+                    in
+                    H.span [ HA.title title ] [ H.text (String.fromChar c) ]
+
+                Just _ ->
+                    H.text (String.fromChar c)
+
+                Nothing ->
+                    H.span [] [ H.text "￼" ]
+    in
+    H.span [ HA.class "syllable" ]
+        [ H.span [ HA.class "onset" ] (syll.onset |> List.map renderChar)
+        , H.span [ HA.class "nucleus" ] (Nonempty.toList syll.nucleus |> List.map renderChar)
+        , H.span [ HA.class "coda" ] (syll.coda |> List.map renderChar)
+        ]
