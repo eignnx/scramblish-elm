@@ -129,9 +129,6 @@ stringFromLetterClass c =
         F ->
             "F"
 
-        Y ->
-            "Y"
-
         Opt inner ->
             "[" ++ stringFromLetterClass inner ++ "]"
 
@@ -277,13 +274,6 @@ choiceFromLetterClass lang class =
 
         F ->
             RX.choice '￼' lang.finals |> R.map Just
-
-        Y ->
-            RX.choice '￼'
-                (Set.intersect L.syllabicConsonants (consonantsOfLang lang)
-                    |> Set.toList
-                )
-                |> R.map Just
 
         Opt c ->
             RX.chance 0.5

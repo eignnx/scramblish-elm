@@ -12,7 +12,6 @@ type LetterClass
     | S -- Sibilant
     | A -- Approximant
     | F -- Final
-    | Y -- S(y)llabic Consonant
     | Opt LetterClass -- An optional letter class
 
 
