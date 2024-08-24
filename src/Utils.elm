@@ -1,6 +1,7 @@
 module Utils exposing (..)
 
 import List.Extra
+import List.Nonempty exposing (Nonempty(..))
 import Task
 import Time
 
@@ -84,3 +85,17 @@ stringHash s =
 doCmd : msg -> Cmd msg
 doCmd msg =
     Time.now |> Task.perform (\_ -> msg)
+
+
+
+-- NONEMPTY
+
+
+nonemptyFilterMap : (a -> Maybe b) -> Nonempty a -> Nonempty b
+nonemptyFilterMap f (Nonempty first rest) =
+    case f first of
+        Just firstContent ->
+            Nonempty firstContent (List.filterMap f rest)
+
+        Nothing ->
+            nonemptyFilterMap f (Nonempty first rest)

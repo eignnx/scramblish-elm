@@ -12,6 +12,7 @@ import Random.Extra as RX
 import Set
 import Utils
 import WordGen.Letters as L exposing (LetterClass(..))
+import WordGen.Syllable as Syllable exposing (Language)
 
 
 syllableStructureTemplates : List (List LetterClass)
@@ -54,16 +55,6 @@ maxSyllableTemplates =
     3
 
 
-type alias Language =
-    { consonants : List Char
-    , vowels : List Char
-    , sibilants : List Char
-    , approximants : List Char
-    , finals : List Char
-    , syllableTemplate : List L.LetterClass
-    }
-
-
 defaultLanguage : Language
 defaultLanguage =
     { consonants = L.allBaseConsonants
@@ -71,7 +62,7 @@ defaultLanguage =
     , sibilants = L.allSibilants
     , approximants = L.allApproximants
     , finals = List.concat L.finalSets
-    , syllableTemplate = [ C, V, C ]
+    , syllableTemplate = Syllable.defaultSyllableTemplate
     }
 
 
@@ -103,22 +94,6 @@ choiceFromLetterClass lang class =
                         else
                             R.constant Nothing
                     )
-
-
-randomSyllable : Language -> R.Generator String
-randomSyllable lang =
-    lang.syllableTemplate
-        |> RX.flattenList (choiceFromLetterClass lang)
-        |> R.map (\cs -> List.filterMap identity cs)
-        |> R.map String.fromList
-        |> R.andThen
-            (\syll ->
-                if invalidSyllable lang syll then
-                    randomSyllable lang
-
-                else
-                    R.constant syll
-            )
 
 
 invalidSyllable : Language -> String -> Bool
@@ -202,8 +177,7 @@ viewLanguage lang =
             ([ div []
                 [ text "Syllable Template: "
                 , lang.syllableTemplate
-                    |> List.map stringFromLetterClass
-                    |> String.join ""
+                    |> Syllable.viewSyllableTemplate
                     |> text
                 ]
              ]
@@ -221,34 +195,12 @@ viewLanguage lang =
         ]
 
 
-stringFromLetterClass : LetterClass -> String
-stringFromLetterClass c =
-    case c of
-        C ->
-            "C"
-
-        V ->
-            "V"
-
-        S ->
-            "S"
-
-        A ->
-            "A"
-
-        F ->
-            "F"
-
-        Opt inner ->
-            "[" ++ stringFromLetterClass inner ++ "]"
-
-
 randomLanguage : R.Generator Language
 randomLanguage =
     let
-        syllableTemplateR : R.Generator (List LetterClass)
+        syllableTemplateR : R.Generator Syllable.SyllableTemplate
         syllableTemplateR =
-            RX.choice [] syllableStructureTemplates
+            Syllable.randomSyllableTemplate
 
         consonantsR =
             L.randomConsonants
@@ -271,8 +223,9 @@ randomLanguage =
                             _ ->
                                 c
 
+                    syllableLetterClasses : List LetterClass
                     syllableLetterClasses =
-                        syllableTemplate |> List.map unwrapOpt
+                        syllableTemplate |> Syllable.syllableTemplateToLetterClasses |> List.map unwrapOpt
 
                     ifClassIsRelevant :
                         LetterClass
@@ -317,9 +270,10 @@ randomLanguage =
             )
 
 
-randomWord : Language -> R.Generator String
+randomWord : Syllable.Language -> R.Generator String
 randomWord lang =
     R.int 1 4
-        |> R.andThen (\n -> R.list n (randomSyllable lang))
+        |> R.andThen (\n -> R.list n (Syllable.randomSyllable lang))
+        |> R.map (List.map Syllable.renderSyllable)
         |> R.map (List.intersperse ".")
         |> R.map String.concat

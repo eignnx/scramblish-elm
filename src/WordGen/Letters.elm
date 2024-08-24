@@ -400,6 +400,8 @@ randomConsonants =
                     ++ enUnfriendly
            )
         |> List.map Tuple.first
+        -- Remove sibilants and approximants.
+        |> List.filter (\c -> not (List.member c allSibilants || List.member c allApproximants))
         -- Choose between 2count and 40% of the consonants.
         |> Random.Extra.subsetMinMax 2 (List.length allConsonants // 5 * 2)
         -- Ensure `d` is chosen if `t` is chosen and vice versa.

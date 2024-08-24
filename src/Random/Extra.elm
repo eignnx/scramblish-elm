@@ -1,6 +1,7 @@
 module Random.Extra exposing (..)
 
 import List.Extra
+import List.Nonempty exposing (Nonempty(..))
 import Maybe.Extra
 import Random
 
@@ -55,6 +56,42 @@ flattenList fn list =
 
         x :: xs ->
             Random.map2 (::) (fn x) (flattenList fn xs)
+
+
+{-| Build a list of values generated randomly based on an existing list, and possibly
+not include some of the values.
+-}
+flattenMaybeList : (a -> Random.Generator (Maybe b)) -> List a -> Random.Generator (List b)
+flattenMaybeList fn list =
+    case list of
+        [] ->
+            Random.constant []
+
+        x :: xs ->
+            fn x
+                |> Random.andThen
+                    (\m ->
+                        case m of
+                            Just y ->
+                                Random.map2 (::) (Random.constant y) (flattenMaybeList fn xs)
+
+                            Nothing ->
+                                flattenMaybeList fn xs
+                    )
+
+
+flattenMaybeNonempty : b -> (a -> Random.Generator (Maybe b)) -> Nonempty a -> Random.Generator (Nonempty b)
+flattenMaybeNonempty default fn (Nonempty first list) =
+    fn first
+        |> Random.andThen
+            (\mfirst ->
+                case mfirst of
+                    Just firstContent ->
+                        flattenMaybeList fn list |> Random.map (Nonempty firstContent)
+
+                    Nothing ->
+                        Random.map (Nonempty default) (flattenMaybeList fn list)
+            )
 
 
 sequence : List (a -> Random.Generator a) -> a -> Random.Generator a

@@ -18,6 +18,7 @@ import Seq
 import Set
 import Utils
 import WordGen.Gen as W
+import WordGen.Syllable as Syllable
 
 
 
@@ -42,7 +43,7 @@ type alias Model =
     { examples : List SyntaxTree
     , scramblishGrammar : GrammarMut
     , querySoln : Maybe (Result T.SolveError T.USet)
-    , wordGenLanguage : W.Language
+    , wordGenLanguage : Syllable.Language
     , sampleSyllables : List String
     , sampleWords : List String
     }
@@ -96,7 +97,7 @@ type Msg
     | RandomSyllables
     | RandomSyllablesGenerated (List String)
     | RandomizeWordGenLanguage
-    | WordGenLanguageGenerated W.Language
+    | WordGenLanguageGenerated Syllable.Language
     | RandomWords
     | RandomWordsGenerated (List String)
 
@@ -170,7 +171,8 @@ update msg model =
             ( model
             , Random.generate
                 RandomSyllablesGenerated
-                (Random.list 50 (W.randomSyllable model.wordGenLanguage))
+                (Random.list 50 (Syllable.randomSyllable model.wordGenLanguage)
+                    |> Random.map (List.map Syllable.renderSyllable))
             )
 
         RandomSyllablesGenerated syllables ->
