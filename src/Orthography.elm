@@ -66,13 +66,13 @@ wordGeneratorFromCvOrtho (CvOrtho cvOrtho) =
                         |> Random.map truncate
 
                 someC =
-                    cvOrtho.consonants |> Random.Extra.choice "￼"
+                    cvOrtho.consonants |> Random.Extra.choice "①"
 
                 someCFollow =
-                    cvOrtho.followingConsonants |> Random.Extra.choice "￼"
+                    cvOrtho.followingConsonants |> Random.Extra.choice "②"
 
                 someV =
-                    cvOrtho.vowels |> Random.Extra.choice "￼"
+                    cvOrtho.vowels |> Random.Extra.choice "③"
 
                 possiblyAppend : Float -> Random.Generator appendable -> appendable -> Random.Generator appendable
                 possiblyAppend pct suffix base =

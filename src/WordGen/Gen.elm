@@ -73,8 +73,8 @@ invalidSyllable lang syll =
         |> String.toList
         |> (\letters ->
                 False
-                    || hasDuplicateAdjacentLetters lang '￼' letters
-                    || hasHardClusters lang '￼' letters
+                    || hasDuplicateAdjacentLetters lang '④' letters
+                    || hasHardClusters lang '⑤' letters
            )
 
 
@@ -255,7 +255,7 @@ randomLanguage =
 
 randomWord : Syllable.Language -> R.Generator (List Syllable.Syll)
 randomWord lang =
-    R.int 1 4
+    RX.lowerWeightedRange (\x -> x ^ 2) 1 4
         |> R.andThen (\n -> R.list n (Syllable.randomSyllable lang))
 
 

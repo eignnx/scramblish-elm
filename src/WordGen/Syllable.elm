@@ -215,7 +215,7 @@ randomSyllable lang =
         nucleusR : R.Generator (Nonempty Char)
         nucleusR =
             template.nucleus
-                |> RX.flattenMaybeNonempty '￼'
+                |> RX.flattenMaybeNonempty '⑥'
                     (\class ->
                         case class of
                             V ->
@@ -227,12 +227,12 @@ randomSyllable lang =
                                 R.float 0 1
                                     |> R.andThen
                                         (\pct ->
-                                            if pct < lang.syllabicConsonantLikelihood then
+                                            if pct < lang.syllabicConsonantLikelihood && List.length langSyllabicConsonants > 0 then
                                                 -- Allow syllabic consonant in place of vowel
-                                                RX.choice '￼' langSyllabicConsonants
+                                                RX.choice '⑦' langSyllabicConsonants
 
                                             else
-                                                RX.choice '￼' lang.vowels
+                                                RX.choice '⑧' lang.vowels
                                         )
                                     |> R.map Just
 
@@ -268,19 +268,19 @@ choiceFromLetterClass : Language -> LetterClass -> R.Generator (Maybe Char)
 choiceFromLetterClass lang class =
     case class of
         C ->
-            RX.choice '￼' lang.consonants |> R.map Just
+            RX.choice '⑨' lang.consonants |> R.map Just
 
         V ->
-            RX.choice '￼' lang.vowels |> R.map Just
+            RX.choice '⑩' lang.vowels |> R.map Just
 
         S ->
-            RX.choice '￼' lang.sibilants |> R.map Just
+            RX.choice '⑪' lang.sibilants |> R.map Just
 
         A ->
-            RX.choice '￼' lang.approximants |> R.map Just
+            RX.choice '⑫' lang.approximants |> R.map Just
 
         F ->
-            RX.choice '￼' lang.finals |> R.map Just
+            RX.choice '⑬' lang.finals |> R.map Just
 
         Opt c ->
             RX.chance 0.5
@@ -346,7 +346,7 @@ viewSyllable syll =
                     H.text (String.fromChar c)
 
                 Nothing ->
-                    H.span [] [ H.text "￼" ]
+                    H.span [] [ H.text ("⑭(" ++ String.fromChar c ++ ")") ]
     in
     H.span [ HA.class "syllable" ]
         [ H.span [ HA.class "onset" ] (syll.onset |> List.map renderChar)
