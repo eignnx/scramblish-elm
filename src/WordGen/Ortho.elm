@@ -100,6 +100,9 @@ romanOrthoEnglish =
                 ( 'æ', _ ) ->
                     ( [ 'a' ], Keep )
 
+                ( 'ɑ', 'ʊ' ) ->
+                    ( [ 'a', 'u', 'g', 'h' ], Drop )
+
                 ( 'ɑ', next ) ->
                     if L.isApproximant next || L.letterHasManner L.Nasal next then
                         ( [ 'a' ], Keep )
@@ -107,8 +110,15 @@ romanOrthoEnglish =
                     else
                         ( [ 'a', 'h' ], Keep )
 
-                ( 'ʌ', _ ) ->
-                    ( [ 'u', 'h' ], Keep )
+                ( 'ʌ', 'f' ) ->
+                    ( [ 'o', 'u', 'g', 'h' ], Drop )
+
+                ( 'ʌ', next ) ->
+                    if L.isConsonant next then
+                        ( [ 'e' ], Keep )
+
+                    else
+                        ( [ 'u', 'h' ], Keep )
 
                 ( 'e', next ) ->
                     if next == '$' || next == '.' then
