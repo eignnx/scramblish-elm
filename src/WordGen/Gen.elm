@@ -256,13 +256,13 @@ randomWordIpa phono =
         |> R.andThen (\n -> R.list n (Phono.randomSyllable phono))
 
 
-type WordGen
-    = WordGen { phonology : Phonology, orthography : Orthography }
+type alias WordGen =
+    { phonology : Phonology, orthography : Orthography }
 
 
 defaultWordGen : WordGen
 defaultWordGen =
-    WordGen { phonology = defaultPhonology, orthography = Ortho.defaultOrthography }
+    { phonology = defaultPhonology, orthography = Ortho.defaultOrthography }
 
 
 randomWordGen : R.Generator WordGen
@@ -271,12 +271,12 @@ randomWordGen =
         |> R.andThen
             (\phono ->
                 Ortho.randomOrthography
-                    |> R.map (\ortho -> WordGen { phonology = phono, orthography = ortho })
+                    |> R.map (\ortho -> { phonology = phono, orthography = ortho })
             )
 
 
 randomWord : WordGen -> R.Generator String
-randomWord (WordGen { phonology, orthography }) =
+randomWord { phonology, orthography } =
     randomWordIpa phonology
         |> R.map (Ortho.applyOrthoMappingToWordWithMarkers orthography)
 

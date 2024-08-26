@@ -43,10 +43,8 @@ type alias Model =
     { examples : List SyntaxTree
     , scramblishGrammar : GrammarMut
     , querySoln : Maybe (Result T.SolveError T.USet)
-    , wordGenLanguage : Syllable.Phonology
     , sampleSyllables : List Syllable.Syll
     , sampleWords : List (List Syllable.Syll)
-    , orthography : WordGen.Ortho.Orthography
     }
 
 
@@ -61,10 +59,8 @@ init _ =
             , wordGenerator = WordGen.defaultWordGen
             }
       , querySoln = Nothing
-      , wordGenLanguage = WordGen.defaultPhonology
       , sampleSyllables = []
       , sampleWords = []
-      , orthography = WordGen.Ortho.romanOrthoEnglish
 
       --   , orthography = WordGen.Ortho.romanOrthoEnglish
       }
@@ -73,7 +69,6 @@ init _ =
         , Utils.doCmd AddExample
         , Utils.doCmd AddExample
         , Utils.doCmd AddExample
-        , Utils.doCmd RandomizeWordGenLanguage
         ]
     )
 
@@ -100,8 +95,6 @@ type Msg
     | RandomSolution T.SolnStream
     | RandomSyllables
     | RandomSyllablesGenerated (List Syllable.Syll)
-    | RandomizeWordGenLanguage
-    | WordGenLanguageGenerated Syllable.Phonology
     | RandomWords
     | RandomWordsGenerated (List (List Syllable.Syll))
 
@@ -175,7 +168,7 @@ update msg model =
             ( model
             , Random.generate
                 RandomSyllablesGenerated
-                (Random.list 50 (Syllable.randomSyllable model.wordGenLanguage))
+                (Random.list 50 (Syllable.randomSyllable model.scramblishGrammar.wordGenerator.phonology))
             )
 
         RandomSyllablesGenerated syllables ->
@@ -183,26 +176,11 @@ update msg model =
             , Cmd.none
             )
 
-        RandomizeWordGenLanguage ->
-            ( model
-            , Random.generate
-                WordGenLanguageGenerated
-                WordGen.randomPhonology
-            )
-
-        WordGenLanguageGenerated lang ->
-            ( { model | wordGenLanguage = lang }
-            , Cmd.batch
-                [ Utils.doCmd RandomSyllables
-                , Utils.doCmd RandomWords
-                ]
-            )
-
         RandomWords ->
             ( model
             , Random.generate
                 RandomWordsGenerated
-                (Random.list 25 (WordGen.randomWordIpa model.wordGenLanguage))
+                (Random.list 25 (WordGen.randomWordIpa model.scramblishGrammar.wordGenerator.phonology))
             )
 
         RandomWordsGenerated words ->
@@ -246,8 +224,7 @@ view model =
                 )
             , details [ attribute "open" "true" ]
                 [ summary [] [ text "Word Generation" ]
-                , button [ onClick RandomizeWordGenLanguage ] [ text "⟳ Regenerate WordGen Language" ]
-                , WordGen.viewPhonology model.wordGenLanguage
+                , WordGen.viewPhonology model.scramblishGrammar.wordGenerator.phonology
                 , button [ onClick RandomSyllables ] [ text "Random Syllables" ]
                 , p []
                     (model.sampleSyllables
@@ -266,7 +243,7 @@ view model =
                                     [ text "/\u{2060}"
                                     , WordGen.viewWord w
                                     , text "\u{2060}/ "
-                                    , text (WordGen.Ortho.applyOrthoMappingToWordWithMarkers model.orthography w)
+                                    , text (WordGen.Ortho.applyOrthoMappingToWordWithMarkers model.scramblishGrammar.wordGenerator.orthography w)
                                     ]
                             )
                     )
@@ -348,11 +325,7 @@ sentenceExampleView grammarMut index engTree =
         , div [ class "translation" ]
             [ div []
                 [ text "Scramblish:"
-                , let
-                    (WordGen.WordGen wordGen) =
-                        grammarMut.wordGenerator
-                  in
-                  syntaxTreeView wordGen.orthography.title scrTree
+                , syntaxTreeView grammarMut.wordGenerator.orthography.title scrTree
                 ]
             , div []
                 [ text "English:"
