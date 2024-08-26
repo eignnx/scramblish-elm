@@ -81,6 +81,14 @@ restrictionChoices =
                     |> Utils.adjacentPairs
                     |> Utils.any (\( a, b ) -> a == b && L.isConsonant a)
       }
+    , { name = "No duplicate vowels"
+      , importance = Required
+      , rule =
+            \_ syll ->
+                String.toList (renderSyllable syll)
+                    |> Utils.adjacentPairs
+                    |> Utils.any (\( a, b ) -> a == b && L.isVowel a)
+      }
     , { name = "No difficult pairs"
       , importance = EnglishLike
       , rule =

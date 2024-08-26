@@ -1,10 +1,8 @@
 module Orthography exposing (..)
 
-import Html.Attributes exposing (maxlength)
+import Html.Attributes 
 import Random
 import Random.Extra
-import String exposing (toInt)
-import Utils
 
 
 type OrthoDir

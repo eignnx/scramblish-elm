@@ -75,6 +75,26 @@ adjacentPairs list =
                     ( x, y ) :: adjacentPairs xs
 
 
+adjacentTriples : List a -> List ( a, a, a )
+adjacentTriples list =
+    case list of
+        [] ->
+            []
+
+        x :: xs ->
+            case xs of
+                [] ->
+                    []
+
+                y :: ys ->
+                    case ys of
+                        [] ->
+                            []
+
+                        z :: _ ->
+                            ( x, y, z ) :: adjacentTriples xs
+
+
 
 -- STRING
 

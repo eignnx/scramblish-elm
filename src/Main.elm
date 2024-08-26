@@ -18,6 +18,7 @@ import Seq
 import Set
 import Utils
 import WordGen.Gen as W
+import WordGen.Ortho
 import WordGen.Syllable as Syllable
 
 
@@ -46,6 +47,7 @@ type alias Model =
     , wordGenLanguage : Syllable.Language
     , sampleSyllables : List Syllable.Syll
     , sampleWords : List (List Syllable.Syll)
+    , orthography : WordGen.Ortho.Orthography
     }
 
 
@@ -63,6 +65,9 @@ init _ =
       , wordGenLanguage = W.defaultLanguage
       , sampleSyllables = []
       , sampleWords = []
+      , orthography = WordGen.Ortho.romanOrthoEnglish
+
+      --   , orthography = WordGen.Ortho.romanOrthoEnglish
       }
     , Cmd.batch
         [ generateScramblishGrammar
@@ -259,7 +264,11 @@ view model =
                         |> List.map
                             (\w ->
                                 span [ class "sample-word" ]
-                                    [ text "/\u{2060}", W.viewWord w, text "\u{2060}/ " ]
+                                    [ text "/\u{2060}"
+                                    , W.viewWord w
+                                    , text "\u{2060}/ "
+                                    , text (WordGen.Ortho.applyOrthoMappingToWordWithMarkers model.orthography w)
+                                    ]
                             )
                     )
                 ]

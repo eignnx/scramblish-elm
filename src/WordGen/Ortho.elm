@@ -1,0 +1,246 @@
+module WordGen.Ortho exposing (..)
+
+import Utils
+import WordGen.Letters exposing (letterHasVoicing)
+import WordGen.Syllable exposing (Syll, renderSyllable)
+
+
+type alias Orthography =
+    { title : String
+    , letterMapping : MappingFn
+    }
+
+
+type LookaheadAction
+    = Drop
+    | Keep
+
+
+type alias MappingFn =
+    ( Char, Char ) -> ( List Char, LookaheadAction )
+
+
+romanOrthoEnglish : Orthography
+romanOrthoEnglish =
+    { title = "English Orthography in Roman Script"
+    , letterMapping =
+        \pair ->
+            case pair of
+                ( 't', 'ʃ' ) ->
+                    ( [ 'c', 'h' ], Drop )
+
+                ( 'ʃ', _ ) ->
+                    ( [ 's', 'h' ], Keep )
+
+                ( 'd', 'ʒ' ) ->
+                    ( [ 'j' ], Drop )
+
+                ( 'ʒ', _ ) ->
+                    ( [ 'z', 'h' ], Keep )
+
+                ( 'ɣ', _ ) ->
+                    ( [ 'g', 'h' ], Keep )
+
+                ( 'x', _ ) ->
+                    ( [ 'k', 'h' ], Keep )
+
+                ( 'j', _ ) ->
+                    ( [ 'y' ], Keep )
+
+                ( 'k', 'ɹ' ) ->
+                    ( [ 'c', 'h', 'r' ], Drop )
+
+                ( 'ɹ', _ ) ->
+                    ( [ 'r' ], Keep )
+
+                ( 'r', _ ) ->
+                    ( [ 'r', 'r' ], Keep )
+
+                ( 'y', _ ) ->
+                    ( [ 'r' ], Keep )
+
+                ( 'ʁ', _ ) ->
+                    ( [ 'r' ], Keep )
+
+                ( 'θ', _ ) ->
+                    ( [ 't', 'h' ], Keep )
+
+                ( 'ð', _ ) ->
+                    ( [ 't', 'h' ], Keep )
+
+                ( 'ŋ', _ ) ->
+                    ( [ 'n', 'g' ], Keep )
+
+                ( 'i', _ ) ->
+                    ( [ 'e', 'e' ], Keep )
+
+                ( 'ɪ', _ ) ->
+                    ( [ 'i' ], Keep )
+
+                ( 'ʊ', _ ) ->
+                    ( [ 'u' ], Keep )
+
+                ( 'u', _ ) ->
+                    ( [ 'e', 'w' ], Keep )
+
+                ( 'ə', _ ) ->
+                    ( [ 'e' ], Keep )
+
+                ( 'ɛ', _ ) ->
+                    ( [ 'e', 'h' ], Keep )
+
+                ( 'æ', _ ) ->
+                    ( [ 'a' ], Keep )
+
+                ( 'ɑ', _ ) ->
+                    ( [ 'a', 'o' ], Keep )
+
+                ( 'ʌ', _ ) ->
+                    ( [ 'u', 'h' ], Keep )
+
+                ( 'e', _ ) ->
+                    ( [ 'a', 'y' ], Keep )
+
+                ( 'ʔ', '.' ) ->
+                    ( [ '-' ], Keep )
+
+                ( 'ʔ', _ ) ->
+                    ( [ '\'' ], Keep )
+
+                ( letter, _ ) ->
+                    ( [ letter ], Keep )
+    }
+
+
+romanOrthoFrench : Orthography
+romanOrthoFrench =
+    { title = "French Orthography in Roman Script"
+    , letterMapping =
+        \pair ->
+            case pair of
+                ( 'ʃ', _ ) ->
+                    ( [ 'c', 'h' ], Keep )
+
+                ( 'ʒ', _ ) ->
+                    ( [ 'j' ], Keep )
+
+                ( 'ɣ', _ ) ->
+                    ( [ 'g', 'h' ], Keep )
+
+                ( 'x', _ ) ->
+                    ( [ 'x', 'h' ], Keep )
+
+                ( 'j', _ ) ->
+                    ( [ 'i', 'l' ], Keep )
+
+                ( 'w', _ ) ->
+                    ( [ 'o', 'u' ], Keep )
+
+                ( 'ɹ', _ ) ->
+                    ( [ 'r' ], Keep )
+
+                ( 'ɾ', _ ) ->
+                    ( [ 'r' ], Keep )
+
+                ( 'ʁ', _ ) ->
+                    ( [ 'r' ], Keep )
+
+                ( 'θ', _ ) ->
+                    ( [ 's' ], Keep )
+
+                ( 'ð', _ ) ->
+                    ( [ 'z' ], Keep )
+
+                ( 'k', _ ) ->
+                    ( [ 'c' ], Keep )
+
+                ( 's', next ) ->
+                    if List.member next [ 'ɑ', 'æ', 'o', 'u' ] then
+                        ( [ 'ç' ], Keep )
+
+                    else
+                        ( [ 's' ], Keep )
+
+                ( 'ŋ', _ ) ->
+                    ( [ 'n', 'g' ], Keep )
+
+                ( 'o', _ ) ->
+                    ( [ 'ô' ], Keep )
+
+                ( 'i', _ ) ->
+                    ( [ 'y' ], Keep )
+
+                ( 'ɪ', _ ) ->
+                    ( [ 'i' ], Keep )
+
+                ( 'ʊ', _ ) ->
+                    ( [ 'œ' ], Keep )
+
+                ( 'u', _ ) ->
+                    ( [ 'u' ], Keep )
+
+                ( 'ə', _ ) ->
+                    ( [ 'e' ], Keep )
+
+                ( 'ɛ', _ ) ->
+                    ( [ 'è' ], Keep )
+
+                ( 'æ', _ ) ->
+                    ( [ 'ê' ], Keep )
+
+                ( 'ɑ', _ ) ->
+                    ( [ 'â' ], Keep )
+
+                ( 'ʌ', _ ) ->
+                    ( [ 'i', 'n' ], Keep )
+
+                ( 'e', _ ) ->
+                    ( [ 'é' ], Keep )
+
+                ( 'ʔ', '.' ) ->
+                    ( [ '-' ], Keep )
+
+                ( 'ʔ', _ ) ->
+                    ( [ '\'' ], Keep )
+
+                ( letter, _ ) ->
+                    ( [ letter ], Keep )
+    }
+
+
+orthographies : List Orthography
+orthographies =
+    [ romanOrthoEnglish
+    , romanOrthoFrench
+    ]
+
+
+applyOrthoMappingToWordWithMarkers : Orthography -> List Syll -> String
+applyOrthoMappingToWordWithMarkers ortho sylls =
+    sylls
+        |> List.map renderSyllable
+        |> String.join "."
+        |> (\word -> "^" ++ word ++ "$")
+        |> String.toList
+        |> Utils.adjacentPairs
+        |> List.map ortho.letterMapping
+        |> Debug.log "letterMapping"
+        |> List.foldl
+            (\( newLetters, newAction ) ( lettersAcc, prevAction ) ->
+                case prevAction of
+                    Drop ->
+                        ( lettersAcc, newAction )
+
+                    Keep ->
+                        ( lettersAcc ++ newLetters, newAction )
+            )
+            ( [], Keep )
+        |> Tuple.first
+        |> List.filter
+            (\letter ->
+                True
+                    && (letter /= '$')
+                    && (letter /= '^')
+                    && (letter /= '.')
+            )
+        |> String.fromList

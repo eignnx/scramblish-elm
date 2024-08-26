@@ -309,6 +309,20 @@ isConsonant letter =
     consonantSatisfies (\_ -> True) letter
 
 
+isVowel : Char -> Bool
+isVowel letter =
+    letterSatisfies
+        (\l ->
+            case l of
+                Vowel _ ->
+                    True
+
+                _ ->
+                    False
+        )
+        letter
+
+
 letterHasManner : Manner -> Char -> Bool
 letterHasManner manner letter =
     consonantSatisfies
