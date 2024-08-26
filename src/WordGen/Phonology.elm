@@ -1,4 +1,4 @@
-module WordGen.Syllable exposing (..)
+module WordGen.Phonology exposing (..)
 
 import Dict
 import Html as H
@@ -12,7 +12,7 @@ import Utils
 import WordGen.Letters as L exposing (LetterClass(..))
 
 
-type alias Language =
+type alias Phonology =
     { syllableTemplate : SyllableTemplate
     , consonants : List Char
     , vowels : List Char
@@ -23,7 +23,7 @@ type alias Language =
     }
 
 
-consonantsOfLang : Language -> Set.Set Char
+consonantsOfLang : Phonology -> Set.Set Char
 consonantsOfLang lang =
     (lang.consonants ++ lang.sibilants ++ lang.approximants ++ lang.finals)
         |> Set.fromList
@@ -43,7 +43,7 @@ type alias Syll =
 type alias SyllableRestriction =
     { name : String
     , importance : RestrictionImportance
-    , rule : Language -> Syll -> Bool
+    , rule : Phonology -> Syll -> Bool
     }
 
 
@@ -212,7 +212,7 @@ randomSyllableTemplate =
         )
 
 
-randomSyllable : Language -> R.Generator Syll
+randomSyllable : Phonology -> R.Generator Syll
 randomSyllable lang =
     let
         template =
@@ -274,7 +274,7 @@ randomSyllable lang =
             )
 
 
-choiceFromLetterClass : Language -> LetterClass -> R.Generator (Maybe Char)
+choiceFromLetterClass : Phonology -> LetterClass -> R.Generator (Maybe Char)
 choiceFromLetterClass lang class =
     case class of
         C ->

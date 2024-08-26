@@ -4,10 +4,10 @@ import Dict
 import Grammar exposing (Form(..), Grammar, Nt, SententialForm, SyntaxTree(..), Tm(..), lookupNt)
 import List.Extra
 import Maybe.Extra
-import Orthography exposing (Orthography)
 import Random
 import Random.Extra
 import Utils
+import WordGen.Gen exposing (WordGen, randomWord)
 
 
 type alias RuleMut =
@@ -57,34 +57,33 @@ type alias GrammarMut =
     , newTitle : String
     , ruleMuts : List RuleMut
     , wordMapping : WordMapping
-    , orthography : Orthography
+    , wordGenerator : WordGen
     }
 
 
-grammarMutGenerator : String -> Orthography -> Grammar -> Random.Generator GrammarMut
-grammarMutGenerator newTitle ortho grammar =
+grammarMutGenerator : String -> WordGen -> Grammar -> Random.Generator GrammarMut
+grammarMutGenerator newTitle wordGen grammar =
     let
         wordMapping : Random.Generator WordMapping
         wordMapping =
-            wordMappingGenerator grammar ortho
+            wordMappingGenerator grammar wordGen
 
         ruleMutations : Random.Generator (List RuleMut)
         ruleMutations =
             Random.Extra.flattenList ruleMutGenerator grammar.rules
 
-        buildGrammarMutation ruleMuts wmap orth =
+        buildGrammarMutation ruleMuts wmap =
             { oldGrammar = grammar
             , newTitle = newTitle
             , ruleMuts = ruleMuts
             , wordMapping = wmap
-            , orthography = orth
+            , wordGenerator = wordGen
             }
     in
-    Random.map3
+    Random.map2
         buildGrammarMutation
         ruleMutations
         wordMapping
-        (Random.constant ortho)
 
 
 applyGrammarMut : GrammarMut -> Grammar
@@ -156,8 +155,8 @@ type alias WordMapping =
     Dict.Dict String String
 
 
-wordMappingGenerator : Grammar -> Orthography -> Random.Generator WordMapping
-wordMappingGenerator { rules } ortho =
+wordMappingGenerator : Grammar -> WordGen -> Random.Generator WordMapping
+wordMappingGenerator { rules } wordGen =
     let
         extractTerminal : Form -> Maybe String
         extractTerminal form =
@@ -181,6 +180,6 @@ wordMappingGenerator { rules } ortho =
             (\word ->
                 Random.pair
                     (Random.constant word)
-                    (ortho.wordGenerator word)
+                    (randomWord wordGen)
             )
         |> Random.map Dict.fromList

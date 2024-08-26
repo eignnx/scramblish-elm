@@ -1,8 +1,10 @@
 module WordGen.Ortho exposing (..)
 
+import Random as R
+import Random.Extra
 import Utils
 import WordGen.Letters as L
-import WordGen.Syllable exposing (Syll, renderSyllable)
+import WordGen.Phonology exposing (Syll, renderSyllable)
 
 
 type alias Orthography =
@@ -242,6 +244,16 @@ orthographies =
     [ romanOrthoEnglish
     , romanOrthoFrench
     ]
+
+
+defaultOrthography : Orthography
+defaultOrthography =
+    List.head orthographies |> Maybe.withDefault romanOrthoEnglish
+
+
+randomOrthography : R.Generator Orthography
+randomOrthography =
+    Random.Extra.choice romanOrthoEnglish orthographies
 
 
 applyOrthoMappingToWordWithMarkers : Orthography -> List Syll -> String

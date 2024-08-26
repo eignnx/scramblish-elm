@@ -12,74 +12,71 @@ import Random.Extra as RX
 import Set
 import Utils
 import WordGen.Letters as L exposing (LetterClass(..))
-import WordGen.Syllable as Syllable exposing (Language)
+import WordGen.Ortho as Ortho exposing (Orthography)
+import WordGen.Phonology as Phono exposing (Phonology)
 
 
-syllableStructureTemplates : List (List LetterClass)
-syllableStructureTemplates =
-    [ [ C, V, C ]
-    , [ C, V, Opt V, C ]
-    , [ C, V, V, Opt C ]
-    , [ C, V, Opt C ]
-    , [ C, V ]
-    , [ V, C ]
-    , [ C, V, F ]
-    , [ Opt C, V, C ]
-    , [ C, V, Opt F ]
-    , [ C, Opt A, V, C ]
-    , [ C, Opt A, V, F ]
-    , [ C, Opt S, V, C ]
-    , [ C, Opt S, V, Opt C ]
-    , [ Opt C, S, V, F ]
-    , [ Opt S, C, V, C ]
-    , [ Opt S, C, V, Opt C ]
-    , [ S, Opt C, V, C ]
-    , [ S, Opt C, V, F ]
-    , [ C, Opt C, V, Opt C ]
-    , [ Opt S, Opt C, V, A, Opt C ]
-    , [ Opt C, V, F ]
-    , [ Opt C, V, Opt C ]
-    , [ Opt C, V, Opt C, S ]
-    , [ Opt A, V, Opt F ]
-    , [ Opt A, V, C, Opt S ]
-    , [ Opt C, V, Opt F ]
-    , [ Opt C, Opt A, V, C ]
-    , [ C, V, Opt A, Opt C ]
-    , [ Opt C, V, Opt A, C ]
-    , [ Opt C, V, A, Opt C ]
-    ]
+
+-- syllableStructureTemplates : List (List LetterClass)
+-- syllableStructureTemplates =
+--     [ [ C, V, C ]
+--     , [ C, V, Opt V, C ]
+--     , [ C, V, V, Opt C ]
+--     , [ C, V, Opt C ]
+--     , [ C, V ]
+--     , [ V, C ]
+--     , [ C, V, F ]
+--     , [ Opt C, V, C ]
+--     , [ C, V, Opt F ]
+--     , [ C, Opt A, V, C ]
+--     , [ C, Opt A, V, F ]
+--     , [ C, Opt S, V, C ]
+--     , [ C, Opt S, V, Opt C ]
+--     , [ Opt C, S, V, F ]
+--     , [ Opt S, C, V, C ]
+--     , [ Opt S, C, V, Opt C ]
+--     , [ S, Opt C, V, C ]
+--     , [ S, Opt C, V, F ]
+--     , [ C, Opt C, V, Opt C ]
+--     , [ Opt S, Opt C, V, A, Opt C ]
+--     , [ Opt C, V, F ]
+--     , [ Opt C, V, Opt C ]
+--     , [ Opt C, V, Opt C, S ]
+--     , [ Opt A, V, Opt F ]
+--     , [ Opt A, V, C, Opt S ]
+--     , [ Opt C, V, Opt F ]
+--     , [ Opt C, Opt A, V, C ]
+--     , [ C, V, Opt A, Opt C ]
+--     , [ Opt C, V, Opt A, C ]
+--     , [ Opt C, V, A, Opt C ]
+--     ]
 
 
-maxSyllableTemplates : Int
-maxSyllableTemplates =
-    3
-
-
-defaultLanguage : Language
-defaultLanguage =
+defaultPhonology : Phonology
+defaultPhonology =
     { consonants = L.allBaseConsonants
     , vowels = L.allVowels |> Set.toList
     , sibilants = L.allSibilants
     , approximants = L.allApproximants
     , finals = List.concat L.finalSets
-    , syllableTemplate = Syllable.defaultSyllableTemplate
+    , syllableTemplate = Phono.defaultSyllableTemplate
     , syllabicConsonantLikelihood = 0.5
     }
 
 
-invalidSyllable : Language -> String -> Bool
-invalidSyllable lang syll =
+invalidSyllable : Phonology -> String -> Bool
+invalidSyllable phono syll =
     syll
         |> String.toList
         |> (\letters ->
                 False
-                    || hasDuplicateAdjacentLetters lang '④' letters
-                    || hasHardClusters lang '⑤' letters
+                    || hasDuplicateAdjacentLetters phono '④' letters
+                    || hasHardClusters phono '⑤' letters
            )
 
 
-hasDuplicateAdjacentLetters : Language -> Char -> List Char -> Bool
-hasDuplicateAdjacentLetters lang prev syll =
+hasDuplicateAdjacentLetters : Phonology -> Char -> List Char -> Bool
+hasDuplicateAdjacentLetters phono prev syll =
     case syll of
         [] ->
             False
@@ -89,11 +86,11 @@ hasDuplicateAdjacentLetters lang prev syll =
                 True
 
             else
-                hasDuplicateAdjacentLetters lang c rest
+                hasDuplicateAdjacentLetters phono c rest
 
 
-hasHardClusters : Language -> Char -> List Char -> Bool
-hasHardClusters lang prev syll =
+hasHardClusters : Phonology -> Char -> List Char -> Bool
+hasHardClusters phono prev syll =
     let
         cluster : List Char -> List Char -> ( Char, Char ) -> Bool
         cluster prevOptions currOptions ( prevCh, currCh ) =
@@ -126,11 +123,11 @@ hasHardClusters lang prev syll =
                     , ( L.allConsonants, [ 'ɣ' ] )
                     ]
             )
-                || hasHardClusters lang curr rest
+                || hasHardClusters phono curr rest
 
 
-viewLanguage : Language -> Html msg
-viewLanguage lang =
+viewPhonology : Phonology -> Html msg
+viewPhonology phono =
     let
         spacedChars list =
             list |> List.intersperse ' ' |> String.fromList
@@ -147,23 +144,23 @@ viewLanguage lang =
         [ div [ class "wordgen-lang" ]
             ([ div []
                 [ text "Syllable Template: "
-                , lang.syllableTemplate
-                    |> Syllable.viewSyllableTemplate
+                , phono.syllableTemplate
+                    |> Phono.viewSyllableTemplate
                     |> text
                 ]
              ]
-                ++ ifNonEmptyList lang.sibilants
-                    (div [] [ text "Sibilants: ", text (spacedChars lang.sibilants) ])
-                ++ ifNonEmptyList lang.approximants
-                    (div [] [ text "Approximants: ", text (spacedChars lang.approximants) ])
-                ++ ifNonEmptyList lang.finals
-                    (div [] [ text "Finals: ", text (spacedChars lang.finals) ])
-                ++ [ div [] [ text "Vowels: ", text (spacedChars lang.vowels) ]
-                   , div [] [ text "Consonants: ", text (spacedChars lang.consonants) ]
+                ++ ifNonEmptyList phono.sibilants
+                    (div [] [ text "Sibilants: ", text (spacedChars phono.sibilants) ])
+                ++ ifNonEmptyList phono.approximants
+                    (div [] [ text "Approximants: ", text (spacedChars phono.approximants) ])
+                ++ ifNonEmptyList phono.finals
+                    (div [] [ text "Finals: ", text (spacedChars phono.finals) ])
+                ++ [ div [] [ text "Vowels: ", text (spacedChars phono.vowels) ]
+                   , div [] [ text "Consonants: ", text (spacedChars phono.consonants) ]
                    , div []
                         [ text "Syllabic Consonant Likelihood: "
                         , text
-                            ((lang.syllabicConsonantLikelihood * 100 |> round |> String.fromInt) ++ "%")
+                            ((phono.syllabicConsonantLikelihood * 100 |> round |> String.fromInt) ++ "%")
                         ]
                    ]
             )
@@ -171,12 +168,12 @@ viewLanguage lang =
         ]
 
 
-randomLanguage : R.Generator Language
-randomLanguage =
+randomPhonology : R.Generator Phonology
+randomPhonology =
     let
-        syllableTemplateR : R.Generator Syllable.SyllableTemplate
+        syllableTemplateR : R.Generator Phono.SyllableTemplate
         syllableTemplateR =
-            Syllable.randomSyllableTemplate
+            Phono.randomSyllableTemplate
 
         consonantsR =
             L.randomConsonants
@@ -201,7 +198,7 @@ randomLanguage =
 
                     syllableLetterClasses : List LetterClass
                     syllableLetterClasses =
-                        syllableTemplate |> Syllable.syllableTemplateToLetterClasses |> List.map unwrapOpt
+                        syllableTemplate |> Phono.syllableTemplateToLetterClasses |> List.map unwrapOpt
 
                     ifClassIsRelevant :
                         LetterClass
@@ -253,13 +250,38 @@ randomLanguage =
             )
 
 
-randomWord : Syllable.Language -> R.Generator (List Syllable.Syll)
-randomWord lang =
+randomWordIpa : Phonology -> R.Generator (List Phono.Syll)
+randomWordIpa phono =
     RX.lowerWeightedRange (\x -> x ^ 3) 1 4
-        |> R.andThen (\n -> R.list n (Syllable.randomSyllable lang))
+        |> R.andThen (\n -> R.list n (Phono.randomSyllable phono))
 
 
-viewWord : List Syllable.Syll -> Html msg
+type WordGen
+    = WordGen { phonology : Phonology, orthography : Orthography }
+
+
+defaultWordGen : WordGen
+defaultWordGen =
+    WordGen { phonology = defaultPhonology, orthography = Ortho.defaultOrthography }
+
+
+randomWordGen : R.Generator WordGen
+randomWordGen =
+    randomPhonology
+        |> R.andThen
+            (\phono ->
+                Ortho.randomOrthography
+                    |> R.map (\ortho -> WordGen { phonology = phono, orthography = ortho })
+            )
+
+
+randomWord : WordGen -> R.Generator String
+randomWord (WordGen { phonology, orthography }) =
+    randomWordIpa phonology
+        |> R.map (Ortho.applyOrthoMappingToWordWithMarkers orthography)
+
+
+viewWord : List Phono.Syll -> Html msg
 viewWord sylls =
-    List.intersperse (text ".") (List.map Syllable.viewSyllable sylls)
+    List.intersperse (text ".") (List.map Phono.viewSyllable sylls)
         |> span []

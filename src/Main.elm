@@ -11,15 +11,14 @@ import Logic.Builtins
 import Logic.Solve.Randomized
 import Logic.Types as T
 import Mutation exposing (GrammarMut, mutateSyntaxTree)
-import Orthography exposing (chooseOrtho)
 import Platform.Cmd as Cmd exposing (Cmd)
 import Random
 import Seq
 import Set
 import Utils
-import WordGen.Gen as W
+import WordGen.Gen as WordGen
 import WordGen.Ortho
-import WordGen.Syllable as Syllable
+import WordGen.Phonology as Syllable
 
 
 
@@ -44,7 +43,7 @@ type alias Model =
     { examples : List SyntaxTree
     , scramblishGrammar : GrammarMut
     , querySoln : Maybe (Result T.SolveError T.USet)
-    , wordGenLanguage : Syllable.Language
+    , wordGenLanguage : Syllable.Phonology
     , sampleSyllables : List Syllable.Syll
     , sampleWords : List (List Syllable.Syll)
     , orthography : WordGen.Ortho.Orthography
@@ -59,10 +58,10 @@ init _ =
             , newTitle = "Scramblish"
             , ruleMuts = []
             , wordMapping = Dict.empty
-            , orthography = Orthography.romanOrthography
+            , wordGenerator = WordGen.defaultWordGen
             }
       , querySoln = Nothing
-      , wordGenLanguage = W.defaultLanguage
+      , wordGenLanguage = WordGen.defaultPhonology
       , sampleSyllables = []
       , sampleWords = []
       , orthography = WordGen.Ortho.romanOrthoEnglish
@@ -102,7 +101,7 @@ type Msg
     | RandomSyllables
     | RandomSyllablesGenerated (List Syllable.Syll)
     | RandomizeWordGenLanguage
-    | WordGenLanguageGenerated Syllable.Language
+    | WordGenLanguageGenerated Syllable.Phonology
     | RandomWords
     | RandomWordsGenerated (List (List Syllable.Syll))
 
@@ -188,7 +187,7 @@ update msg model =
             ( model
             , Random.generate
                 WordGenLanguageGenerated
-                W.randomLanguage
+                WordGen.randomPhonology
             )
 
         WordGenLanguageGenerated lang ->
@@ -203,7 +202,7 @@ update msg model =
             ( model
             , Random.generate
                 RandomWordsGenerated
-                (Random.list 25 (W.randomWord model.wordGenLanguage))
+                (Random.list 25 (WordGen.randomWordIpa model.wordGenLanguage))
             )
 
         RandomWordsGenerated words ->
@@ -220,10 +219,10 @@ randomSentences eng _ start =
 generateScramblishGrammar : Cmd Msg
 generateScramblishGrammar =
     Random.generate MutationCreated
-        (chooseOrtho
+        (WordGen.randomWordGen
             |> Random.andThen
-                (\ortho ->
-                    Mutation.grammarMutGenerator "Scramblish" ortho en
+                (\wordGen ->
+                    Mutation.grammarMutGenerator "Scramblish" wordGen en
                 )
         )
 
@@ -248,7 +247,7 @@ view model =
             , details [ attribute "open" "true" ]
                 [ summary [] [ text "Word Generation" ]
                 , button [ onClick RandomizeWordGenLanguage ] [ text "⟳ Regenerate WordGen Language" ]
-                , W.viewLanguage model.wordGenLanguage
+                , WordGen.viewPhonology model.wordGenLanguage
                 , button [ onClick RandomSyllables ] [ text "Random Syllables" ]
                 , p []
                     (model.sampleSyllables
@@ -265,7 +264,7 @@ view model =
                             (\w ->
                                 span [ class "sample-word" ]
                                     [ text "/\u{2060}"
-                                    , W.viewWord w
+                                    , WordGen.viewWord w
                                     , text "\u{2060}/ "
                                     , text (WordGen.Ortho.applyOrthoMappingToWordWithMarkers model.orthography w)
                                     ]
@@ -349,7 +348,11 @@ sentenceExampleView grammarMut index engTree =
         , div [ class "translation" ]
             [ div []
                 [ text "Scramblish:"
-                , syntaxTreeView grammarMut.orthography.id scrTree
+                , let
+                    (WordGen.WordGen wordGen) =
+                        grammarMut.wordGenerator
+                  in
+                  syntaxTreeView wordGen.orthography.title scrTree
                 ]
             , div []
                 [ text "English:"
