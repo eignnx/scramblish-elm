@@ -323,6 +323,20 @@ isVowel letter =
         letter
 
 
+isApproximant : Char -> Bool
+isApproximant letter =
+    consonantSatisfies
+        (\articulation ->
+            case articulation.manner of
+                Approximant _ ->
+                    True
+
+                _ ->
+                    False
+        )
+        letter
+
+
 letterHasManner : Manner -> Char -> Bool
 letterHasManner manner letter =
     consonantSatisfies

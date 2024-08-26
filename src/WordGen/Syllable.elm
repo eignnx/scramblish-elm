@@ -189,6 +189,7 @@ randomSyllableTemplate : R.Generator SyllableTemplate
 randomSyllableTemplate =
     RX.choice defaultSyllableTemplate
         ([ ( [ C ], Nonempty V [], [] ) -- CV
+         , ( [], Nonempty V [], [ C ] ) -- VC
          , ( [ C ], Nonempty V [], [ C ] ) -- CVC
          , ( [ C ], Nonempty V [], [ Opt C ] ) -- CV[C]
          , ( [ Opt C ], Nonempty V [], [ C ] ) -- [C]VC
@@ -196,7 +197,8 @@ randomSyllableTemplate =
          , ( [ C ], Nonempty V [], [ F ] ) -- CVF
          , ( [ C ], Nonempty V [], [ Opt F ] ) -- CV[F]
          , ( [ C, Opt S ], Nonempty V [], [ C ] ) -- C[S]VC
-         , ( [ Opt S ], Nonempty V [ Opt V ], [ A ] ) -- [S]V[V][A]
+         , ( [ Opt S ], Nonempty V [], [ A ] ) -- [S]V[V][A]
+         , ( [ S, Opt A ], Nonempty V [], [ F ] ) -- S[A]VF
          , ( [ Opt A ], Nonempty V [], [ C ] ) -- [A]VC
          , ( [ A ], Nonempty V [], [ F ] ) -- AVF
          ]

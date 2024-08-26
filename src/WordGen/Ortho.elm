@@ -1,7 +1,7 @@
 module WordGen.Ortho exposing (..)
 
 import Utils
-import WordGen.Letters exposing (letterHasVoicing)
+import WordGen.Letters as L
 import WordGen.Syllable exposing (Syll, renderSyllable)
 
 
@@ -53,11 +53,11 @@ romanOrthoEnglish =
                 ( 'ɹ', _ ) ->
                     ( [ 'r' ], Keep )
 
+                ( 'ɾ', _ ) ->
+                    ( [ 'r' ], Keep )
+
                 ( 'r', _ ) ->
                     ( [ 'r', 'r' ], Keep )
-
-                ( 'y', _ ) ->
-                    ( [ 'r' ], Keep )
 
                 ( 'ʁ', _ ) ->
                     ( [ 'r' ], Keep )
@@ -65,8 +65,12 @@ romanOrthoEnglish =
                 ( 'θ', _ ) ->
                     ( [ 't', 'h' ], Keep )
 
-                ( 'ð', _ ) ->
-                    ( [ 't', 'h' ], Keep )
+                ( 'ð', next ) ->
+                    if next == '$' || next == '.' then
+                        ( [ 't', 'h', 'e' ], Keep )
+
+                    else
+                        ( [ 't', 'h' ], Keep )
 
                 ( 'ŋ', _ ) ->
                     ( [ 'n', 'g' ], Keep )
@@ -81,25 +85,40 @@ romanOrthoEnglish =
                     ( [ 'u' ], Keep )
 
                 ( 'u', _ ) ->
-                    ( [ 'e', 'w' ], Keep )
+                    ( [ 'o', 'o' ], Keep )
 
-                ( 'ə', _ ) ->
-                    ( [ 'e' ], Keep )
+                ( 'ə', next ) ->
+                    if L.letterHasVoicing L.Voiced next then
+                        ( [ 'u' ], Keep )
+
+                    else
+                        ( [ 'e' ], Keep )
 
                 ( 'ɛ', _ ) ->
-                    ( [ 'e', 'h' ], Keep )
+                    ( [ 'e' ], Keep )
 
                 ( 'æ', _ ) ->
                     ( [ 'a' ], Keep )
 
-                ( 'ɑ', _ ) ->
-                    ( [ 'a', 'o' ], Keep )
+                ( 'ɑ', next ) ->
+                    if L.isApproximant next || L.letterHasManner L.Nasal next then
+                        ( [ 'a' ], Keep )
+
+                    else
+                        ( [ 'a', 'h' ], Keep )
 
                 ( 'ʌ', _ ) ->
                     ( [ 'u', 'h' ], Keep )
 
-                ( 'e', _ ) ->
-                    ( [ 'a', 'y' ], Keep )
+                ( 'e', next ) ->
+                    if next == '$' || next == '.' then
+                        ( [ 'a', 'y' ], Keep )
+
+                    else
+                        ( [ 'e', 'i' ], Keep )
+
+                ( '.', 'ʔ' ) ->
+                    ( [ '-' ], Drop )
 
                 ( 'ʔ', '.' ) ->
                     ( [ '-' ], Keep )
@@ -229,7 +248,7 @@ applyOrthoMappingToWordWithMarkers ortho sylls =
             (\( newLetters, newAction ) ( lettersAcc, prevAction ) ->
                 case prevAction of
                     Drop ->
-                        ( lettersAcc, newAction )
+                        ( lettersAcc, Keep )
 
                     Keep ->
                         ( lettersAcc ++ newLetters, newAction )

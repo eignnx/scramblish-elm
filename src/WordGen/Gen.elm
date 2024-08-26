@@ -255,7 +255,7 @@ randomLanguage =
 
 randomWord : Syllable.Language -> R.Generator (List Syllable.Syll)
 randomWord lang =
-    RX.lowerWeightedRange (\x -> x ^ 2) 1 4
+    RX.lowerWeightedRange (\x -> x ^ 3) 1 4
         |> R.andThen (\n -> R.list n (Syllable.randomSyllable lang))
 
 
