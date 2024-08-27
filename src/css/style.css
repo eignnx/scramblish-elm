@@ -304,3 +304,11 @@ section {
     padding-inline: 0.5rem;
     font-weight: bold;
 }
+
+.word.hovered {
+    border-radius: 3px;
+    transition: ease 150ms;
+    color: rgb(244, 244, 84);
+    text-shadow: 1px 1px 10px white;
+    text-decoration: underline;
+}

@@ -6,7 +6,7 @@ import EnGrammar exposing (..)
 import Grammar exposing (..)
 import Html exposing (Html, button, dd, details, div, dl, dt, footer, h1, h3, header, main_, p, section, span, summary, text)
 import Html.Attributes exposing (attribute, class, id, style)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onMouseOver)
 import Logic.Builtins
 import Logic.Solve.Randomized
 import Logic.Types as T
@@ -45,6 +45,7 @@ type alias Model =
     , querySoln : Maybe (Result T.SolveError T.USet)
     , sampleSyllables : List Syllable.Syll
     , sampleWords : List (List Syllable.Syll)
+    , hoveredWord : Maybe String
     }
 
 
@@ -61,6 +62,7 @@ init _ =
       , querySoln = Nothing
       , sampleSyllables = []
       , sampleWords = []
+      , hoveredWord = Nothing
 
       --   , orthography = WordGen.Ortho.romanOrthoEnglish
       }
@@ -99,6 +101,7 @@ type Msg
     | RandomSyllablesGenerated (List Syllable.Syll)
     | RandomWords
     | RandomWordsGenerated (List (List Syllable.Syll))
+    | HoverWord String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -188,6 +191,9 @@ update msg model =
         RandomWordsGenerated words ->
             ( { model | sampleWords = words }, Cmd.none )
 
+        HoverWord word ->
+            ( { model | hoveredWord = Just word }, Cmd.none )
+
 
 randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg
 randomSentences eng _ start =
@@ -221,7 +227,7 @@ view model =
         , main_ []
             [ details [ attribute "open" "false" ]
                 ([ summary [] [ text "Sentence Examples" ] ]
-                    ++ (model.examples |> List.indexedMap (sentenceExampleView model.scramblishGrammar))
+                    ++ (model.examples |> List.indexedMap (sentenceExampleView model.hoveredWord model.scramblishGrammar))
                     ++ [ button [ onClick AddExample ] [ text "+ Additional Example" ] ]
                 )
             , details [ attribute "open" "true" ]
@@ -320,8 +326,8 @@ viewUSet u =
         |> div []
 
 
-sentenceExampleView : GrammarMut -> Int -> SyntaxTree -> Html msg
-sentenceExampleView grammarMut index engTree =
+sentenceExampleView : Maybe String -> GrammarMut -> Int -> SyntaxTree -> Html Msg
+sentenceExampleView hoveredWord grammarMut index engTree =
     let
         scrTree =
             mutateSyntaxTree grammarMut engTree
@@ -331,11 +337,46 @@ sentenceExampleView grammarMut index engTree =
         , dl [ class "translation" ]
             [ div []
                 [ dt [] [ text "Scramblish:" ]
-                , dd [] [ syntaxTreeView grammarMut.wordGenerator.orthography.title scrTree ]
+                , dd [] [ syntaxTreeView hoveredWord grammarMut.wordGenerator.orthography.title scrTree ]
                 ]
             , div []
                 [ dt [] [ text "English:" ]
-                , dd [] [ syntaxTreeView "english" engTree ]
+                , dd [] [ syntaxTreeView hoveredWord "english" engTree ]
                 ]
             ]
         ]
+
+
+syntaxTreeView : Maybe String -> String -> SyntaxTree -> Html Msg
+syntaxTreeView hoveredWord scriptName tree =
+    syntaxTreeToWordList tree
+        |> List.map (viewWord hoveredWord)
+        |> List.intersperse (span [ class "whitespace" ] [ text " " ])
+        |> span [ class "sentence", class ("script-name--" ++ scriptName) ]
+
+
+syntaxTreeToWordList : SyntaxTree -> List String
+syntaxTreeToWordList tree =
+    case tree of
+        Leaf (Tm word) ->
+            [ word ]
+
+        Node { children } ->
+            children
+                |> List.concatMap syntaxTreeToWordList
+
+
+viewWord : Maybe String -> String -> Html Msg
+viewWord hoveredWord word =
+    if hoveredWord == Just word then
+        span
+            [ class "word hovered"
+            ]
+            [ text word ]
+
+    else
+        span
+            [ class "word"
+            , onMouseOver (HoverWord word)
+            ]
+            [ text word ]

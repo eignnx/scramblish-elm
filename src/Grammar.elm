@@ -163,23 +163,3 @@ renderNt title (Nt name) =
 renderTm : Tm -> Html msg
 renderTm (Tm tm) =
     span [ class "terminal" ] [ text tm ]
-
-
-syntaxTreeView : String -> SyntaxTree -> Html msg
-syntaxTreeView scriptName tree =
-    syntaxTreeToWordList tree
-        |> List.map (\word -> span [ class "word" ] [ text word ])
-        |> List.intersperse (span [ class "whitespace" ] [ text " " ])
-        |> span [ class "sentence", class ("script-name--" ++ scriptName) ]
-
-
-syntaxTreeToWordList : SyntaxTree -> List String
-syntaxTreeToWordList tree =
-    case tree of
-        Leaf (Tm word) ->
-            [ word ]
-
-        Node { children } ->
-            children
-                |> List.map syntaxTreeToWordList
-                |> List.concat
