@@ -163,3 +163,14 @@ renderNt title (Nt name) =
 renderTm : Tm -> Html msg
 renderTm (Tm tm) =
     span [ class "terminal" ] [ text tm ]
+
+
+syntaxTreeToWordList : SyntaxTree -> List String
+syntaxTreeToWordList tree =
+    case tree of
+        Leaf (Tm word) ->
+            [ word ]
+
+        Node { children } ->
+            children
+                |> List.concatMap syntaxTreeToWordList
