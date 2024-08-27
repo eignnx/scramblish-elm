@@ -125,7 +125,8 @@ generateSyntaxTree grammar start =
 
 renderGrammar : Grammar -> Html msg
 renderGrammar { title, rules } =
-    details [ attribute "open" "true" ]
+    details []
+        -- [ attribute "open" "true" ]
         [ summary [ class "grammar-title" ] [ text title ]
         , dl [ class "grammar-rules" ] (groupByNt rules |> List.map (renderRule title))
         ]

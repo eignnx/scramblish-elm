@@ -4,7 +4,7 @@ import Browser
 import Dict
 import EnGrammar exposing (..)
 import Grammar exposing (..)
-import Html exposing (Html, button, details, div, footer, h1, h3, header, main_, p, section, span, summary, text)
+import Html exposing (Html, button, dd, details, div, dl, dt, footer, h1, h3, header, main_, p, section, span, summary, text)
 import Html.Attributes exposing (attribute, class, id, style)
 import Html.Events exposing (onClick)
 import Logic.Builtins
@@ -69,6 +69,8 @@ init _ =
         , Utils.doCmd AddExample
         , Utils.doCmd AddExample
         , Utils.doCmd AddExample
+        , Utils.doCmd RandomSyllables
+        , Utils.doCmd RandomWords
         ]
     )
 
@@ -224,6 +226,7 @@ view model =
                 )
             , details [ attribute "open" "true" ]
                 [ summary [] [ text "Word Generation" ]
+                , button [ onClick MutateEnGrammar ] [ text "⟳ Regenerate Scramblish" ]
                 , WordGen.viewPhonology model.scramblishGrammar.wordGenerator.phonology
                 , button [ onClick RandomSyllables ] [ text "Random Syllables" ]
                 , p []
@@ -239,16 +242,19 @@ view model =
                     (model.sampleWords
                         |> List.map
                             (\w ->
-                                span [ class "sample-word" ]
+                                span [ class "sample-word", class "ipa" ]
                                     [ text "/\u{2060}"
                                     , WordGen.viewWord w
                                     , text "\u{2060}/ "
-                                    , text (WordGen.Ortho.applyOrthoMappingToWordWithMarkers model.scramblishGrammar.wordGenerator.orthography w)
+                                    , span [ class "sample-word", class "orthography" ]
+                                        [ text (WordGen.Ortho.applyOrthoMappingToWordWithMarkers model.scramblishGrammar.wordGenerator.orthography w)
+                                        , text " "
+                                        ]
                                     ]
                             )
                     )
                 ]
-            , details [ attribute "open" "false" ]
+            , details []
                 (summary [] [ text "Query Tests" ]
                     :: button [ onClick RandomSolve ] [ text "Random Solve Query" ]
                     :: (case model.querySoln of
@@ -322,14 +328,14 @@ sentenceExampleView grammarMut index engTree =
     in
     div [ style "padding-block" "1rem", class "example" ]
         [ h3 [] [ text ("Example " ++ String.fromInt (index + 1)) ]
-        , div [ class "translation" ]
+        , dl [ class "translation" ]
             [ div []
-                [ text "Scramblish:"
-                , syntaxTreeView grammarMut.wordGenerator.orthography.title scrTree
+                [ dt [] [ text "Scramblish:" ]
+                , dd [] [ syntaxTreeView grammarMut.wordGenerator.orthography.title scrTree ]
                 ]
             , div []
-                [ text "English:"
-                , syntaxTreeView "english" engTree
+                [ dt [] [ text "English:" ]
+                , dd [] [ syntaxTreeView "english" engTree ]
                 ]
             ]
         ]

@@ -55,6 +55,7 @@
     }
 }
 
+
 header {
     display: flex;
     justify-content: space-between;
@@ -118,18 +119,18 @@ summary:hover {
     break-inside: avoid-column;
 }
 
-dt {
+.grammar-rules dt {
     font-weight: bold;
     padding-block-start: 1rem;
 }
 
-dd {
+.grammar-rules dd {
     margin-inline-start: 0.5rem;
     padding-inline-start: 0.5rem;
     text-wrap: nowrap;
 }
 
-dd::before {
+.grammar-rules dd::before {
     content: "|";
     padding-inline-end: 0.5rem;
     color: goldenrod;
@@ -189,7 +190,7 @@ a.nonterminal:hover {
 
 .sentence {
     font-size: larger;
-    font-family: 'Courier New', Courier, monospace;
+    /* font-family: 'Courier New', Courier, monospace; */
     text-wrap: wrap;
 }
 
@@ -213,20 +214,55 @@ a.nonterminal:hover {
     display: flex;
 }
 
-.example h3 {
-    margin-inline-end: 1rem;
-    padding-inline-end: 1rem;
-    border-inline-end: 2px solid goldenrod;
+@media (width <=800px) {
+    .example {
+        flex-direction: column;
+    }
+
+    .example h3 {
+        text-decoration: underline solid goldenrod;
+    }
+
+    .example div {
+        margin-block-start: 1.5rem;
+    }
 }
 
-.example .translation>* {
-    display: flex;
-    justify-content: space-between;
+@media (width > 800px) {
+    .example {
+        flex-direction: row;
+        width: 100%;
+    }
+
+    .example dl {
+        width: 80%;
+    }
+
+    .example .translation>* {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .sentence {
+        padding-inline-start: 1rem;
+    }
+
+    .example h3 {
+        margin-inline-end: 1rem;
+        padding-inline-end: 1rem;
+        border-inline-end: 2px solid goldenrod;
+    }
+
 }
 
-.sentence {
-    padding-inline-start: 1rem;
+.example dt {
+    font-weight: bold;
+    font-variant: petite-caps;
+    font-size: smaller;
 }
+
+.example dd {}
+
 
 .script-name--roman {
     font-family: 'Times New Roman', Times, serif;
@@ -257,8 +293,14 @@ section {
     /* font-size: 2em; */
 }
 
-.sample-word {
+.sample-word .ipa {
     font-family: Georgia, 'Times New Roman', Times, serif;
     padding-inline: 0.5rem;
     /* font-size: 2em; */
+}
+
+.sample-word .orthography {
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    padding-inline: 0.5rem;
+    font-weight: bold;
 }
