@@ -96,8 +96,8 @@ type Msg
     | RandomSolve (Req () T.SolnStream)
     | RandomSyllables (Req () (List Syllable.Syll))
     | RandomWords (Req () (List (List Syllable.Syll)))
-    | HoverWord (Maybe String)
-    | SelectWord (Maybe String)
+    | HoverWord (Maybe ( Lang, String ))
+    | SelectWord (Maybe ( Lang, String ))
     | DeleteTranslationPair { eng : String, scr : String }
 
 
@@ -235,18 +235,32 @@ update msg ({ wordStats } as model) =
                     , Cmd.none
                     )
 
-                ( Just word1, Just word2 ) ->
-                    ( { model
-                        | wordStats =
-                            { wordStats
-                                | selectedWord = Nothing
-                                , userTranslations =
-                                    { eng = word1, scr = word2 }
-                                        :: wordStats.userTranslations
-                            }
-                      }
-                    , Cmd.none
-                    )
+                ( Just ( lang1, word1 ), Just ( lang2, word2 ) ) ->
+                    if lang1 /= lang2 then
+                        let
+                            ( engWord, scrWord ) =
+                                if lang1 == English then
+                                    ( word1, word2 )
+
+                                else
+                                    ( word2, word1 )
+                        in
+                        ( { model
+                            | wordStats =
+                                { wordStats
+                                    | selectedWord = Nothing
+                                    , userTranslations =
+                                        { eng = engWord, scr = scrWord }
+                                            :: wordStats.userTranslations
+                                }
+                          }
+                        , Cmd.none
+                        )
+
+                    else
+                        ( { model | wordStats = { wordStats | selectedWord = mWord } }
+                        , Cmd.none
+                        )
 
         DeleteTranslationPair { eng, scr } ->
             ( { model
@@ -430,26 +444,26 @@ sentenceExampleView wordStats grammarMut index engTree =
         , dl [ class "translation" ]
             [ div []
                 [ dt [] [ text "Scramblish:" ]
-                , dd [] [ syntaxTreeView wordStats grammarMut.wordGenerator.orthography.title scrTree ]
+                , dd [] [ syntaxTreeView wordStats grammarMut.wordGenerator.orthography.title Scramblish scrTree ]
                 ]
             , div []
                 [ dt [] [ text "English:" ]
-                , dd [] [ syntaxTreeView wordStats "english" engTree ]
+                , dd [] [ syntaxTreeView wordStats "english" English engTree ]
                 ]
             ]
         ]
 
 
-syntaxTreeView : WordStats -> String -> SyntaxTree -> Html Msg
-syntaxTreeView wordStats scriptName tree =
+syntaxTreeView : WordStats -> String -> Lang -> SyntaxTree -> Html Msg
+syntaxTreeView wordStats scriptName lang tree =
     syntaxTreeToWordList tree
-        |> List.map (viewWord wordStats)
+        |> List.map (viewWord wordStats lang)
         |> List.intersperse (span [ class "whitespace" ] [ text " " ])
         |> span [ class "sentence", class ("script-name--" ++ String.join "-" (String.split " " scriptName)) ]
 
 
-viewWord : WordStats -> String -> Html Msg
-viewWord wordStats word =
+viewWord : WordStats -> Lang -> String -> Html Msg
+viewWord wordStats lang word =
     let
         subscript =
             WordStats.getCountForWord wordStats word
@@ -466,17 +480,17 @@ viewWord wordStats word =
 
         attrs =
             class "word"
-                :: (if wordStats.selectedWord == Just word then
+                :: (if wordStats.selectedWord == Just ( lang, word ) then
                         [ class "selected" ]
 
-                    else if wordStats.hoveredWord == Just word then
+                    else if wordStats.hoveredWord == Just ( lang, word ) then
                         [ class "hovered"
                         , onMouseOut (HoverWord Nothing)
-                        , onClickNoPropogate (SelectWord (Just word))
+                        , onClickNoPropogate (SelectWord (Just ( lang, word )))
                         ]
 
                     else
-                        [ onMouseOver (HoverWord (Just word))
+                        [ onMouseOver (HoverWord (Just ( lang, word )))
                         ]
                    )
                 ++ (if
@@ -512,8 +526,8 @@ viewUserTranslations wordStats userTranslations =
                         |> List.map
                             (\{ eng, scr } ->
                                 tr []
-                                    [ td [] [ viewWord wordStats eng ]
-                                    , td [] [ viewWord wordStats scr ]
+                                    [ td [] [ viewWord wordStats English eng ]
+                                    , td [] [ viewWord wordStats Scramblish scr ]
                                     , td []
                                         [ button
                                             [ title "Delete the translation pair"

@@ -1,14 +1,14 @@
 module WordStats exposing (..)
 
 import Dict
-import Grammar exposing (SyntaxTree)
+import Grammar exposing (Lang(..), SyntaxTree)
 import List.Extra
 
 
 type alias WordStats =
     { counts : Dict.Dict String Int
-    , hoveredWord : Maybe String
-    , selectedWord : Maybe String
+    , hoveredWord : Maybe ( Lang, String )
+    , selectedWord : Maybe ( Lang, String )
     , userTranslations : List { eng : String, scr : String }
     }
 

@@ -8,6 +8,11 @@ import Set
 import Utils
 
 
+type Lang
+    = English
+    | Scramblish
+
+
 type alias Grammar =
     { title : String
     , rules : List ( Nt, SententialForm )
