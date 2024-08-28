@@ -6,7 +6,8 @@ import List.Extra
 
 
 type alias WordStats =
-    { counts : Dict.Dict String Int
+    { engCounts : Dict.Dict String Int
+    , scrCounts : Dict.Dict String Int
     , hoveredWord : Maybe ( Lang, String )
     , selectedWord : Maybe ( Lang, String )
     , userTranslations : List { eng : String, scr : String }
@@ -15,10 +16,11 @@ type alias WordStats =
 
 default : WordStats
 default =
-    { counts = Dict.empty
+    { engCounts = Dict.empty
+    , scrCounts = Dict.empty
     , hoveredWord = Nothing
     , selectedWord = Nothing
-    , userTranslations = [ { eng = "dog", scr = "cat" } ]
+    , userTranslations = []
     }
 
 
@@ -56,6 +58,13 @@ mergeCounts counts1 counts2 =
         counts2
 
 
-getCountForWord : WordStats -> String -> Int
-getCountForWord stats word =
-    Dict.get word stats.counts |> Maybe.withDefault 0
+getCountForWord : WordStats -> Lang -> String -> Int
+getCountForWord stats lang word =
+    Maybe.withDefault 0 <|
+        Dict.get word <|
+            case lang of
+                English ->
+                    stats.engCounts
+
+                Scramblish ->
+                    stats.scrCounts

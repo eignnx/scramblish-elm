@@ -111,12 +111,16 @@ update msg ({ wordStats } as model) =
             let
                 newExamples =
                     model.examples ++ [ syntaxTree ]
+
+                wordCounts =
+                    computeWordStats model.scramblishGrammar newExamples
             in
             ( { model
                 | examples = newExamples
                 , wordStats =
                     { wordStats
-                        | counts = computeWordStats model.scramblishGrammar newExamples
+                        | engCounts = wordCounts.eng
+                        , scrCounts = wordCounts.scr
                     }
               }
             , Cmd.none
@@ -126,11 +130,16 @@ update msg ({ wordStats } as model) =
             ( model, generateScramblishGrammar )
 
         MutateEnGrammar (Answer grammarMut) ->
+            let
+                wordCounts =
+                    computeWordStats grammarMut model.examples
+            in
             ( { model
                 | scramblishGrammar = grammarMut
                 , wordStats =
                     { wordStats
-                        | counts = computeWordStats grammarMut model.examples
+                        | engCounts = wordCounts.eng
+                        , scrCounts = wordCounts.scr
                     }
               }
             , Cmd.batch
@@ -283,7 +292,10 @@ randomSentences eng _ start =
         (generateSyntaxTree eng (Nt start))
 
 
-computeWordStats : GrammarMut -> List SyntaxTree -> Dict.Dict String Int
+computeWordStats :
+    GrammarMut
+    -> List SyntaxTree
+    -> { eng : Dict.Dict String Int, scr : Dict.Dict String Int }
 computeWordStats scramblishGrammar sentences =
     let
         engCounts =
@@ -294,7 +306,7 @@ computeWordStats scramblishGrammar sentences =
                 |> List.map (Mutation.mutateSyntaxTree scramblishGrammar)
                 |> WordStats.countWords
     in
-    WordStats.mergeCounts engCounts scrCounts
+    { eng = engCounts, scr = scrCounts }
 
 
 generateScramblishGrammar : Cmd Msg
@@ -466,7 +478,7 @@ viewWord : WordStats -> Lang -> String -> Html Msg
 viewWord wordStats lang word =
     let
         subscript =
-            WordStats.getCountForWord wordStats word
+            WordStats.getCountForWord wordStats lang word
                 |> String.fromInt
                 |> text
                 |> List.singleton
