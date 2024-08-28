@@ -380,7 +380,7 @@ syntaxTreeView wordStats scriptName tree =
     syntaxTreeToWordList tree
         |> List.map (viewWord wordStats)
         |> List.intersperse (span [ class "whitespace" ] [ text " " ])
-        |> span [ class "sentence", class ("script-name--" ++ scriptName) ]
+        |> span [ class "sentence", class ("script-name--" ++ String.join "-" (String.split " " scriptName)) ]
 
 
 viewWord : WordStats -> String -> Html Msg
