@@ -557,6 +557,25 @@ viewWord wordStats lang word =
 
 viewUserTranslations : WordStats -> List { eng : String, scr : String } -> Html Msg
 viewUserTranslations wordStats userTranslations =
+    let
+        viewRow { eng, scr } =
+            tr []
+                [ td [] [ viewWord wordStats English eng ]
+                , td [] [ viewWord wordStats Scramblish scr ]
+                , td []
+                    [ button
+                        [ title "Delete the translation pair"
+                        , onClick
+                            (DeleteTranslationPair
+                                { eng = eng
+                                , scr = scr
+                                }
+                            )
+                        ]
+                        [ text "x" ]
+                    ]
+                ]
+    in
     aside
         [ id "user-translations" ]
         [ table []
@@ -565,22 +584,7 @@ viewUserTranslations wordStats userTranslations =
                 , th [] [ text "Scramblish" ]
                 , th [] []
                 ]
-                :: (userTranslations
-                        |> List.map
-                            (\{ eng, scr } ->
-                                tr []
-                                    [ td [] [ viewWord wordStats English eng ]
-                                    , td [] [ viewWord wordStats Scramblish scr ]
-                                    , td []
-                                        [ button
-                                            [ title "Delete the translation pair"
-                                            , onClick (DeleteTranslationPair { eng = eng, scr = scr })
-                                            ]
-                                            [ text "x" ]
-                                        ]
-                                    ]
-                            )
-                   )
+                :: (userTranslations |> List.map viewRow)
             )
         ]
 
