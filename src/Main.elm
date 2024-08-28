@@ -13,6 +13,7 @@ import Logic.Types as T
 import Mutation exposing (GrammarMut, mutateSyntaxTree)
 import Platform.Cmd as Cmd exposing (Cmd)
 import Random
+import Req exposing (..)
 import Seq
 import Set
 import Utils
@@ -67,11 +68,11 @@ init _ =
       }
     , Cmd.batch
         [ generateScramblishGrammar
-        , Utils.doCmd AddExample
-        , Utils.doCmd AddExample
-        , Utils.doCmd AddExample
-        , Utils.doCmd RandomSyllables
-        , Utils.doCmd RandomWords
+        , Utils.doCmd (RandomExample (Ask ()))
+        , Utils.doCmd (RandomExample (Ask ()))
+        , Utils.doCmd (RandomExample (Ask ()))
+        , Utils.doCmd (RandomSyllables (Ask ()))
+        , Utils.doCmd (RandomWords (Ask ()))
         ]
     )
 
@@ -90,55 +91,53 @@ subscriptions _ =
 
 
 type Msg
-    = AddExample
-    | GeneratedExample SyntaxTree
-    | MutateEnGrammar
-    | MutationCreated Mutation.GrammarMut
-    | RandomSolve
-    | RandomSolution T.SolnStream
-    | RandomSyllables
-    | RandomSyllablesGenerated (List Syllable.Syll)
-    | RandomWords
-    | RandomWordsGenerated (List (List Syllable.Syll))
+    = RandomExample (Req () SyntaxTree)
+    | MutateEnGrammar (Req () Mutation.GrammarMut)
+    | RandomSolve (Req () T.SolnStream)
+    | RandomSyllables (Req () (List Syllable.Syll))
+    | RandomWords (Req () (List (List Syllable.Syll)))
     | HoverWord (Maybe String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ({ wordStats } as model) =
     case msg of
-        AddExample ->
+        RandomExample (Ask ()) ->
             ( model, randomSentences en model.scramblishGrammar "Sentence" )
 
-        GeneratedExample syntaxTree ->
+        RandomExample (Answer syntaxTree) ->
             let
                 newExamples =
                     model.examples ++ [ syntaxTree ]
-
-                newWordCounts =
-                    WordStats.countWords newExamples
-                        |> WordStats.mergeCounts
-                            (newExamples
-                                |> List.map (Mutation.mutateSyntaxTree model.scramblishGrammar)
-                                |> WordStats.countWords
-                            )
             in
             ( { model
                 | examples = newExamples
-                , wordStats = { wordStats | counts = newWordCounts }
+                , wordStats =
+                    { wordStats
+                        | counts = computeWordStats model.scramblishGrammar newExamples
+                    }
               }
             , Cmd.none
             )
 
-        MutateEnGrammar ->
+        MutateEnGrammar (Ask ()) ->
             ( model, generateScramblishGrammar )
 
-        MutationCreated grammarMut ->
-            ( { model | scramblishGrammar = grammarMut }, Cmd.none )
+        MutateEnGrammar (Answer grammarMut) ->
+            ( { model
+                | scramblishGrammar = grammarMut
+                , wordStats =
+                    { wordStats
+                        | counts = computeWordStats grammarMut model.examples
+                    }
+              }
+            , Cmd.none
+            )
 
-        RandomSolve ->
+        RandomSolve (Ask ()) ->
             ( model
             , Random.generate
-                RandomSolution
+                (Answer >> RandomSolve)
                 (Logic.Solve.Randomized.solveQuery
                     (T.dbMerge Logic.Builtins.stdDb Logic.Builtins.stdDb)
                     T.emptyDupSubst
@@ -174,7 +173,7 @@ update msg ({ wordStats } as model) =
                 )
             )
 
-        RandomSolution solns ->
+        RandomSolve (Answer solns) ->
             case Seq.next solns of
                 Seq.Nil ->
                     ( { model | querySoln = Nothing }, Cmd.none )
@@ -185,26 +184,26 @@ update msg ({ wordStats } as model) =
                 Seq.Cons (Err e) _ ->
                     ( { model | querySoln = Just (Err e) }, Cmd.none )
 
-        RandomSyllables ->
+        RandomSyllables (Ask ()) ->
             ( model
             , Random.generate
-                RandomSyllablesGenerated
+                (Answer >> RandomSyllables)
                 (Random.list 50 (Syllable.randomSyllable model.scramblishGrammar.wordGenerator.phonology))
             )
 
-        RandomSyllablesGenerated syllables ->
+        RandomSyllables (Answer syllables) ->
             ( { model | sampleSyllables = syllables }
             , Cmd.none
             )
 
-        RandomWords ->
+        RandomWords (Ask ()) ->
             ( model
             , Random.generate
-                RandomWordsGenerated
+                (Answer >> RandomWords)
                 (Random.list 25 (WordGen.randomWordIpa model.scramblishGrammar.wordGenerator.phonology))
             )
 
-        RandomWordsGenerated words ->
+        RandomWords (Answer words) ->
             ( { model | sampleWords = words }, Cmd.none )
 
         HoverWord mWord ->
@@ -220,13 +219,27 @@ update msg ({ wordStats } as model) =
 randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg
 randomSentences eng _ start =
     Random.generate
-        GeneratedExample
+        (Answer >> RandomExample)
         (generateSyntaxTree eng (Nt start))
+
+
+computeWordStats : GrammarMut -> List SyntaxTree -> Dict.Dict String Int
+computeWordStats scramblishGrammar sentences =
+    let
+        engCounts =
+            WordStats.countWords sentences
+
+        scrCounts =
+            sentences
+                |> List.map (Mutation.mutateSyntaxTree scramblishGrammar)
+                |> WordStats.countWords
+    in
+    WordStats.mergeCounts engCounts scrCounts
 
 
 generateScramblishGrammar : Cmd Msg
 generateScramblishGrammar =
-    Random.generate MutationCreated
+    Random.generate (Answer >> MutateEnGrammar)
         (WordGen.randomWordGen
             |> Random.andThen
                 (\wordGen ->
@@ -256,13 +269,13 @@ view model =
                                     model.scramblishGrammar
                                 )
                        )
-                    ++ [ button [ onClick AddExample ] [ text "+ Additional Example" ] ]
+                    ++ [ button [ onClick (RandomExample (Ask ())) ] [ text "+ Additional Example" ] ]
                 )
             , details [ attribute "open" "true" ]
                 [ summary [] [ text "Word Generation" ]
-                , button [ onClick MutateEnGrammar ] [ text "⟳ Regenerate Scramblish" ]
+                , button [ onClick (MutateEnGrammar (Ask ())) ] [ text "⟳ Regenerate Scramblish" ]
                 , WordGen.viewPhonology model.scramblishGrammar.wordGenerator.phonology
-                , button [ onClick RandomSyllables ] [ text "Random Syllables" ]
+                , button [ onClick (RandomSyllables (Ask ())) ] [ text "Random Syllables" ]
                 , p []
                     (model.sampleSyllables
                         |> List.map
@@ -271,7 +284,7 @@ view model =
                                     [ text "/\u{2060}", Syllable.viewSyllable s, text "\u{2060}/ " ]
                             )
                     )
-                , button [ onClick RandomWords ] [ text "Random Words" ]
+                , button [ onClick (RandomWords (Ask ())) ] [ text "Random Words" ]
                 , p []
                     (model.sampleWords
                         |> List.map
@@ -290,7 +303,7 @@ view model =
                 ]
             , details []
                 (summary [] [ text "Query Tests" ]
-                    :: button [ onClick RandomSolve ] [ text "Random Solve Query" ]
+                    :: button [ onClick (RandomSolve (Ask ())) ] [ text "Random Solve Query" ]
                     :: (case model.querySoln of
                             Nothing ->
                                 [ text "No query results yet." ]
@@ -324,7 +337,7 @@ view model =
             , section [ class "container", class "grammar-container" ]
                 [ renderGrammar en ]
             , section [ class "container", class "grammar-container" ]
-                [ button [ onClick MutateEnGrammar ] [ text "⟳ Regenerate Grammar Mutation" ]
+                [ button [ onClick (MutateEnGrammar (Ask ())) ] [ text "⟳ Regenerate Grammar Mutation" ]
                 , renderGrammar <|
                     Mutation.applyGrammarMut model.scramblishGrammar
                 ]
