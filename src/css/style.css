@@ -314,8 +314,6 @@ section {
 }
 
 .word-count {
-    font-size: x-small;
     color: rgba(255, 255, 255, 0.75);
-    /* we'll desiplay as subscript: */
     vertical-align: sub;
 }

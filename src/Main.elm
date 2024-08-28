@@ -391,7 +391,13 @@ viewWord wordStats word =
                 |> String.fromInt
                 |> text
                 |> List.singleton
-                |> span [ class "word-count" ]
+                |> span
+                    [ class "word-count"
+
+                    -- Prevent selection of the count. Helpful to exclude
+                    -- numbers while copy-pasting.
+                    , attribute "inert" ""
+                    ]
 
         classes =
             if wordStats.hoveredWord == Just word then
