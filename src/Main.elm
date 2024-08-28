@@ -501,6 +501,16 @@ viewWord wordStats lang word =
                     , attribute "inert" ""
                     ]
 
+        userTranslationPartner =
+            case lang of
+                English ->
+                    List.Extra.find (\{ eng } -> eng == word) wordStats.userTranslations
+                        |> Maybe.map .scr
+
+                Scramblish ->
+                    List.Extra.find (\{ scr } -> scr == word) wordStats.userTranslations
+                        |> Maybe.map .eng
+
         attrs =
             class "word"
                 :: (if wordStats.selectedWord == Just ( lang, word ) then
@@ -529,11 +539,20 @@ viewWord wordStats lang word =
                         []
                    )
     in
-    span
-        [ class "word-and-subscript" ]
-        [ span attrs [ text word ]
-        , subscript
-        ]
+    case userTranslationPartner of
+        Just partner ->
+            Html.ruby
+                [ class "word-and-subscript" ]
+                [ span attrs [ text word ]
+                , subscript
+                , Html.rt [ class "translation" ] [ text partner ]
+                ]
+
+        Nothing ->
+            span [ class "word-and-subscript" ]
+                [ span attrs [ text word ]
+                , subscript
+                ]
 
 
 viewUserTranslations : WordStats -> List { eng : String, scr : String } -> Html Msg
