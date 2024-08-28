@@ -480,26 +480,33 @@ sentenceExampleView wordStats grammarMut index engTree =
 syntaxTreeView : WordStats -> String -> Lang -> SyntaxTree -> Html Msg
 syntaxTreeView wordStats scriptName lang tree =
     syntaxTreeToWordList tree
-        |> List.map (viewWord wordStats lang)
+        |> List.map (viewWord True wordStats lang)
         |> List.intersperse (span [ class "whitespace" ] [ text " " ])
         |> span [ class "sentence", class ("script-name--" ++ String.join "-" (String.split " " scriptName)) ]
 
 
-viewWord : WordStats -> Lang -> String -> Html Msg
-viewWord wordStats lang word =
+viewWord : Bool -> WordStats -> Lang -> String -> Html Msg
+viewWord displayRuby wordStats lang word =
     let
-        subscript =
+        count =
             WordStats.getCountForWord wordStats lang word
-                |> String.fromInt
-                |> text
-                |> List.singleton
-                |> span
-                    [ class "word-count"
 
-                    -- Prevent selection of the count. Helpful to exclude
-                    -- numbers while copy-pasting.
-                    , attribute "inert" ""
-                    ]
+        subscript =
+            if count > 0 then
+                count
+                    |> String.fromInt
+                    |> text
+                    |> List.singleton
+                    |> span
+                        [ class "word-count"
+
+                        -- Prevent selection of the count. Helpful to exclude
+                        -- numbers while copy-pasting.
+                        , attribute "inert" ""
+                        ]
+
+            else
+                span [] []
 
         userTranslationPartner =
             case lang of
@@ -541,12 +548,19 @@ viewWord wordStats lang word =
     in
     case userTranslationPartner of
         Just partner ->
-            Html.ruby
-                [ class "word-and-subscript" ]
-                [ span attrs [ text word ]
-                , subscript
-                , Html.rt [ class "translation" ] [ text partner ]
-                ]
+            if displayRuby then
+                Html.ruby
+                    [ class "word-and-subscript" ]
+                    [ span attrs [ text word ]
+                    , subscript
+                    , Html.rt [ class "translation" ] [ text partner ]
+                    ]
+
+            else
+                span [ class "word-and-subscript" ]
+                    [ span attrs [ text word ]
+                    , subscript
+                    ]
 
         Nothing ->
             span [ class "word-and-subscript" ]
@@ -560,8 +574,8 @@ viewUserTranslations wordStats userTranslations =
     let
         viewRow { eng, scr } =
             tr []
-                [ td [] [ viewWord wordStats English eng ]
-                , td [] [ viewWord wordStats Scramblish scr ]
+                [ td [] [ viewWord False wordStats English eng ]
+                , td [] [ viewWord False wordStats Scramblish scr ]
                 , td []
                     [ button
                         [ title "Delete the translation pair"
@@ -584,7 +598,17 @@ viewUserTranslations wordStats userTranslations =
                 , th [] [ text "Scramblish" ]
                 , th [] []
                 ]
-                :: (userTranslations |> List.map viewRow)
+                :: (case wordStats.selectedWord of
+                        Just ( English, eng ) ->
+                            [ viewRow { eng = eng, scr = "—" } ]
+
+                        Just ( Scramblish, scr ) ->
+                            [ viewRow { eng = "—", scr = scr } ]
+
+                        Nothing ->
+                            []
+                   )
+                ++ (userTranslations |> List.map viewRow)
             )
         ]
 
