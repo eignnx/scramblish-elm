@@ -503,6 +503,7 @@ viewWord wordStats lang word =
 
                     else
                         [ onMouseOver (HoverWord (Just ( lang, word )))
+                        , onClickNoPropogate (SelectWord (Just ( lang, word )))
                         ]
                    )
                 ++ (if
