@@ -309,10 +309,26 @@ section {
     border-radius: 3px;
     transition: ease 150ms;
     color: rgb(244, 145, 249);
-    text-shadow: 1px 1px 10px white;
     text-decoration: underline;
     /* text-decoration-style: dotted; */
-    text-decoration-line: blink;
+    animation: blink 750ms infinite;
+}
+
+@keyframes blink {
+    0% {
+        text-decoration-color: inherit;
+        text-shadow: 1px 1px 20px rgba(255, 255, 255, 0.5);
+    }
+
+    50% {
+        text-decoration-color: transparent;
+        text-shadow: none;
+    }
+
+    100% {
+        text-decoration-color: inherit;
+        text-shadow: 1px 1px 20px rgba(255, 255, 255, 0.5);
+    }
 }
 
 .word.hovered {
