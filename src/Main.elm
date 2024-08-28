@@ -4,10 +4,11 @@ import Browser
 import Dict
 import EnGrammar exposing (..)
 import Grammar exposing (..)
-import Html exposing (Html, button, dd, details, div, dl, dt, footer, h1, h3, header, main_, p, section, span, summary, text)
-import Html.Attributes exposing (attribute, class, id, style)
+import Html exposing (Html, aside, button, dd, details, div, dl, dt, footer, h1, h3, header, main_, p, section, span, summary, table, td, text, th, tr)
+import Html.Attributes exposing (attribute, class, id, style, title)
 import Html.Events exposing (onClick, onDoubleClick, onMouseOut, onMouseOver, stopPropagationOn)
 import Json.Decode as De
+import List.Extra
 import Logic.Builtins
 import Logic.Solve.Randomized
 import Logic.Types as T
@@ -72,8 +73,6 @@ init _ =
         , Utils.doCmd (RandomExample (Ask ()))
         , Utils.doCmd (RandomExample (Ask ()))
         , Utils.doCmd (RandomExample (Ask ()))
-        , Utils.doCmd (RandomSyllables (Ask ()))
-        , Utils.doCmd (RandomWords (Ask ()))
         ]
     )
 
@@ -133,7 +132,10 @@ update msg ({ wordStats } as model) =
                         | counts = computeWordStats grammarMut model.examples
                     }
               }
-            , Cmd.none
+            , Cmd.batch
+                [ Utils.doCmd (RandomSyllables (Ask ()))
+                , Utils.doCmd (RandomWords (Ask ()))
+                ]
             )
 
         RandomSolve (Ask ()) ->
@@ -218,9 +220,32 @@ update msg ({ wordStats } as model) =
             )
 
         SelectWord mWord ->
-            ( { model | wordStats = { wordStats | selectedWord = mWord } }
-            , Cmd.none
-            )
+            case ( model.wordStats.selectedWord, mWord ) of
+                ( Nothing, Nothing ) ->
+                    ( model, Cmd.none )
+
+                ( Nothing, Just _ ) ->
+                    ( { model | wordStats = { wordStats | selectedWord = mWord } }
+                    , Cmd.none
+                    )
+
+                ( Just _, Nothing ) ->
+                    ( { model | wordStats = { wordStats | selectedWord = Nothing } }
+                    , Cmd.none
+                    )
+
+                ( Just word1, Just word2 ) ->
+                    ( { model
+                        | wordStats =
+                            { wordStats
+                                | selectedWord = Nothing
+                                , userTranslations =
+                                    { eng = word1, scr = word2 }
+                                        :: wordStats.userTranslations
+                            }
+                      }
+                    , Cmd.none
+                    )
 
 
 randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg
@@ -261,99 +286,102 @@ generateScramblishGrammar =
 
 view : Model -> Html Msg
 view model =
-    div
-        [ id "app-content"
-        , onClick (SelectWord Nothing)
-        ]
-        [ header []
-            [ h1 []
-                [ text "Scramblish" ]
+    div [ id "app-outer-wrapper" ]
+        [ viewUserTranslations model.wordStats model.wordStats.userTranslations
+        , div
+            [ id "app-content"
+            , onClick (SelectWord Nothing)
             ]
-        , main_ []
-            [ details [ attribute "open" "false" ]
-                (summary [] [ text "Sentence Examples" ]
-                    :: (model.examples
-                            |> List.indexedMap
-                                (sentenceExampleView
-                                    model.wordStats
-                                    model.scramblishGrammar
+            [ header []
+                [ h1 []
+                    [ text "Scramblish" ]
+                ]
+            , main_ []
+                [ details [ attribute "open" "false" ]
+                    (summary [] [ text "Sentence Examples" ]
+                        :: (model.examples
+                                |> List.indexedMap
+                                    (sentenceExampleView
+                                        model.wordStats
+                                        model.scramblishGrammar
+                                    )
+                           )
+                        ++ [ button [ onClick (RandomExample (Ask ())) ] [ text "+ Additional Example" ] ]
+                    )
+                , details [ attribute "open" "true" ]
+                    [ summary [] [ text "Word Generation" ]
+                    , button [ onClick (MutateEnGrammar (Ask ())) ] [ text "⟳ Regenerate Scramblish" ]
+                    , WordGen.viewPhonology model.scramblishGrammar.wordGenerator.phonology
+                    , button [ onClick (RandomSyllables (Ask ())) ] [ text "Random Syllables" ]
+                    , p []
+                        (model.sampleSyllables
+                            |> List.map
+                                (\s ->
+                                    span [ class "sample-syllable" ]
+                                        [ text "/\u{2060}", Syllable.viewSyllable s, text "\u{2060}/ " ]
                                 )
-                       )
-                    ++ [ button [ onClick (RandomExample (Ask ())) ] [ text "+ Additional Example" ] ]
-                )
-            , details [ attribute "open" "true" ]
-                [ summary [] [ text "Word Generation" ]
-                , button [ onClick (MutateEnGrammar (Ask ())) ] [ text "⟳ Regenerate Scramblish" ]
-                , WordGen.viewPhonology model.scramblishGrammar.wordGenerator.phonology
-                , button [ onClick (RandomSyllables (Ask ())) ] [ text "Random Syllables" ]
-                , p []
-                    (model.sampleSyllables
-                        |> List.map
-                            (\s ->
-                                span [ class "sample-syllable" ]
-                                    [ text "/\u{2060}", Syllable.viewSyllable s, text "\u{2060}/ " ]
-                            )
-                    )
-                , button [ onClick (RandomWords (Ask ())) ] [ text "Random Words" ]
-                , p []
-                    (model.sampleWords
-                        |> List.map
-                            (\w ->
-                                span [ class "sample-word", class "ipa" ]
-                                    [ text "/\u{2060}"
-                                    , WordGen.viewWord w
-                                    , text "\u{2060}/ "
-                                    , span [ class "sample-word", class "orthography" ]
-                                        [ text (WordGen.Ortho.applyOrthoMappingToWordWithMarkers model.scramblishGrammar.wordGenerator.orthography w)
-                                        , text " "
+                        )
+                    , button [ onClick (RandomWords (Ask ())) ] [ text "Random Words" ]
+                    , p []
+                        (model.sampleWords
+                            |> List.map
+                                (\w ->
+                                    span [ class "sample-word", class "ipa" ]
+                                        [ text "/\u{2060}"
+                                        , WordGen.viewWord w
+                                        , text "\u{2060}/ "
+                                        , span [ class "sample-word", class "orthography" ]
+                                            [ text (WordGen.Ortho.applyOrthoMappingToWordWithMarkers model.scramblishGrammar.wordGenerator.orthography w)
+                                            , text " "
+                                            ]
                                         ]
-                                    ]
-                            )
+                                )
+                        )
+                    ]
+                , details []
+                    (summary [] [ text "Query Tests" ]
+                        :: button [ onClick (RandomSolve (Ask ())) ] [ text "Random Solve Query" ]
+                        :: (case model.querySoln of
+                                Nothing ->
+                                    [ text "No query results yet." ]
+
+                                Just (Ok u) ->
+                                    [ text "Query succeeded: ", viewUSet u ]
+
+                                Just (Err e) ->
+                                    [ text ("Query failed: " ++ Debug.toString e) ]
+                           )
                     )
+
+                -- [ Logic.solveQuery
+                --     Logic.exDb
+                --     Logic.usetEmpty
+                --     [ Logic.Nt "mortal" [ Logic.Var "X" ] ]
+                --     -- [ Logic.Nt "man" [ Logic.Atom "socrates" ] ]
+                --     -- |> Debug.toString
+                --     -- |> text
+                --     |> List.map
+                --         (\res ->
+                --             case res of
+                --                 Err e ->
+                --                     e |> Debug.toString |> text
+                --                 Ok us ->
+                --                     us |> Logic.viewUSet
+                --         )
+                --     |> List.intersperse (hr [] [])
+                --     |> div [ class "all-solutions" ]
+                -- ]
+                , section [ class "container", class "grammar-container" ]
+                    [ renderGrammar en ]
+                , section [ class "container", class "grammar-container" ]
+                    [ button [ onClick (MutateEnGrammar (Ask ())) ] [ text "⟳ Regenerate Grammar Mutation" ]
+                    , renderGrammar <|
+                        Mutation.applyGrammarMut model.scramblishGrammar
+                    ]
                 ]
-            , details []
-                (summary [] [ text "Query Tests" ]
-                    :: button [ onClick (RandomSolve (Ask ())) ] [ text "Random Solve Query" ]
-                    :: (case model.querySoln of
-                            Nothing ->
-                                [ text "No query results yet." ]
-
-                            Just (Ok u) ->
-                                [ text "Query succeeded: ", viewUSet u ]
-
-                            Just (Err e) ->
-                                [ text ("Query failed: " ++ Debug.toString e) ]
-                       )
-                )
-
-            -- [ Logic.solveQuery
-            --     Logic.exDb
-            --     Logic.usetEmpty
-            --     [ Logic.Nt "mortal" [ Logic.Var "X" ] ]
-            --     -- [ Logic.Nt "man" [ Logic.Atom "socrates" ] ]
-            --     -- |> Debug.toString
-            --     -- |> text
-            --     |> List.map
-            --         (\res ->
-            --             case res of
-            --                 Err e ->
-            --                     e |> Debug.toString |> text
-            --                 Ok us ->
-            --                     us |> Logic.viewUSet
-            --         )
-            --     |> List.intersperse (hr [] [])
-            --     |> div [ class "all-solutions" ]
-            -- ]
-            , section [ class "container", class "grammar-container" ]
-                [ renderGrammar en ]
-            , section [ class "container", class "grammar-container" ]
-                [ button [ onClick (MutateEnGrammar (Ask ())) ] [ text "⟳ Regenerate Grammar Mutation" ]
-                , renderGrammar <|
-                    Mutation.applyGrammarMut model.scramblishGrammar
-                ]
+            , footer []
+                [ text "© 2024" ]
             ]
-        , footer []
-            [ text "© 2024" ]
         ]
 
 
@@ -423,24 +451,64 @@ viewWord wordStats word =
                     ]
 
         attrs =
-            if wordStats.selectedWord == Just word then
-                [ class "word selected" ]
+            class "word"
+                :: (if wordStats.selectedWord == Just word then
+                        [ class "selected" ]
 
-            else if wordStats.hoveredWord == Just word then
-                [ class "word hovered"
-                , onMouseOut (HoverWord Nothing)
-                , onClickNoPropogate (SelectWord (Just word))
-                ]
+                    else if wordStats.hoveredWord == Just word then
+                        [ class "hovered"
+                        , onMouseOut (HoverWord Nothing)
+                        , onClickNoPropogate (SelectWord (Just word))
+                        ]
 
-            else
-                [ class "word"
-                , onMouseOver (HoverWord (Just word))
-                ]
+                    else
+                        [ onMouseOver (HoverWord (Just word))
+                        ]
+                   )
+                ++ (if
+                        List.Extra.find
+                            (\{ eng, scr } -> eng == word || scr == word)
+                            wordStats.userTranslations
+                            /= Nothing
+                    then
+                        [ class "translated" ]
+
+                    else
+                        []
+                   )
     in
     span
         [ class "word-and-subscript" ]
         [ span attrs [ text word ]
         , subscript
+        ]
+
+
+viewUserTranslations : WordStats -> List { eng : String, scr : String } -> Html Msg
+viewUserTranslations wordStats userTranslations =
+    aside
+        [ id "user-translations" ]
+        [ table []
+            (tr []
+                [ th [] [ text "English" ]
+                , th [] [ text "Scramblish" ]
+                , th [] []
+                ]
+                :: (userTranslations
+                        |> List.map
+                            (\{ eng, scr } ->
+                                tr []
+                                    [ td [] [ viewWord wordStats eng ]
+                                    , td [] [ viewWord wordStats scr ]
+                                    , td []
+                                        [ button
+                                            [ title "Delete the translation pair" ]
+                                            [ text "🗙" ]
+                                        ]
+                                    ]
+                            )
+                   )
+            )
         ]
 
 

@@ -311,6 +311,8 @@ section {
     color: rgb(244, 145, 249);
     text-shadow: 1px 1px 10px white;
     text-decoration: underline;
+    /* text-decoration-style: dotted; */
+    text-decoration-line: blink;
 }
 
 .word.hovered {
@@ -319,9 +321,109 @@ section {
     color: rgb(244, 244, 84);
     text-shadow: 1px 1px 10px white;
     text-decoration: underline;
+    text-decoration-style: dotted;
+}
+
+.word.translated {
+    border-radius: 3px;
+    transition: ease 150ms;
+    color: rgb(162, 255, 162);
+    text-decoration: underline;
 }
 
 .word-count {
     color: rgba(255, 255, 255, 0.75);
     vertical-align: sub;
+    font-size: x-small;
+}
+
+#app-outer-content {
+    position: absolute;
+}
+
+#user-translations {
+    position: fixed;
+
+    background-color: rgba(46, 49, 75, 0.8);
+    padding: 1rem;
+
+    display: flex;
+    justify-content: center;
+
+    backdrop-filter: blur(8px);
+}
+
+@media (width > 800px) {
+    #user-translations {
+        top: 0;
+        right: 0;
+        border-radius: 0 0 0 0.25rem;
+        border-bottom: 2px solid goldenrod;
+        border-left: 2px solid goldenrod;
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+}
+
+@media (width <=800px) {
+    #user-translations {
+        bottom: 0;
+        right: 0;
+        left: 0;
+        border-radius: 1rem;
+        max-height: 30vh;
+        overflow-y: auto;
+        border-top: 2px solid goldenrod;
+    }
+
+    #user-translations table {
+        margin-inline: 3rem;
+    }
+}
+
+#user-translations table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* continue formatting for table */
+#user-translations th,
+td {
+    border: 1px solid goldenrod;
+    padding: 0.2rem;
+    text-align: center;
+}
+
+#user-translations th {
+    font-size: smaller;
+    border-bottom: 4px double goldenrod;
+}
+
+#user-translations tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+#user-translations td:has(button) {
+    padding: 0;
+}
+
+#user-translations button {
+    padding: 0.2rem;
+    text-align: center;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    background-color: transparent;
+    color: goldenrod;
+}
+
+#user-translations button:hover {
+    background-color: goldenrod;
+    color: black;
+}
+
+#user-translations button:active {
+    background-color: white;
+    color: goldenrod;
 }

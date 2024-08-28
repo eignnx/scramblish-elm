@@ -18,7 +18,7 @@ default =
     { counts = Dict.empty
     , hoveredWord = Nothing
     , selectedWord = Nothing
-    , userTranslations = []
+    , userTranslations = [ { eng = "dog", scr = "cat" } ]
     }
 
 
