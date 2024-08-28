@@ -190,8 +190,8 @@ a.nonterminal:hover {
 
 .sentence {
     font-size: larger;
-    /* font-family: 'Courier New', Courier, monospace; */
     text-wrap: wrap;
+    line-height: 1.5em;
 }
 
 .sentence::after {
@@ -261,7 +261,6 @@ a.nonterminal:hover {
     font-size: smaller;
 }
 
-.example dd {}
 
 
 .script-name--roman {
@@ -303,6 +302,10 @@ section {
     font-family: Georgia, 'Times New Roman', Times, serif;
     padding-inline: 0.5rem;
     font-weight: bold;
+}
+
+.word {
+    display: inline-block;
 }
 
 .word.selected {
@@ -351,6 +354,22 @@ section {
     color: rgba(255, 255, 255, 0.75);
     vertical-align: sub;
     font-size: x-small;
+}
+
+ruby {
+    ruby-position: under;
+}
+
+rt {
+    font-style: italic;
+}
+
+rt::before {
+    content: "(";
+}
+
+rt::after {
+    content: ")";
 }
 
 #app-outer-content {
