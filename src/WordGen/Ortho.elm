@@ -265,7 +265,6 @@ applyOrthoMappingToWordWithMarkers ortho sylls =
         |> String.toList
         |> Utils.adjacentPairs
         |> List.map ortho.letterMapping
-        |> Debug.log "letterMapping"
         |> List.foldl
             (\( newLetters, newAction ) ( lettersAcc, prevAction ) ->
                 case prevAction of

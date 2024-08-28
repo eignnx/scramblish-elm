@@ -8,6 +8,8 @@ import List.Extra
 type alias WordStats =
     { counts : Dict.Dict String Int
     , hoveredWord : Maybe String
+    , selectedWord : Maybe String
+    , userTranslations : List { eng : String, scr : String }
     }
 
 
@@ -15,6 +17,8 @@ default : WordStats
 default =
     { counts = Dict.empty
     , hoveredWord = Nothing
+    , selectedWord = Nothing
+    , userTranslations = []
     }
 
 
@@ -31,7 +35,6 @@ countWords trees =
         )
         Dict.empty
         trees
-        |> Debug.log "countWords"
 
 
 mergeCounts : Dict.Dict String Int -> Dict.Dict String Int -> Dict.Dict String Int

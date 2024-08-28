@@ -6,7 +6,8 @@ import EnGrammar exposing (..)
 import Grammar exposing (..)
 import Html exposing (Html, button, dd, details, div, dl, dt, footer, h1, h3, header, main_, p, section, span, summary, text)
 import Html.Attributes exposing (attribute, class, id, style)
-import Html.Events exposing (onClick, onMouseOut, onMouseOver)
+import Html.Events exposing (onClick, onDoubleClick, onMouseOut, onMouseOver, stopPropagationOn)
+import Json.Decode as De
 import Logic.Builtins
 import Logic.Solve.Randomized
 import Logic.Types as T
@@ -97,6 +98,7 @@ type Msg
     | RandomSyllables (Req () (List Syllable.Syll))
     | RandomWords (Req () (List (List Syllable.Syll)))
     | HoverWord (Maybe String)
+    | SelectWord (Maybe String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -215,6 +217,11 @@ update msg ({ wordStats } as model) =
             , Cmd.none
             )
 
+        SelectWord mWord ->
+            ( { model | wordStats = { wordStats | selectedWord = mWord } }
+            , Cmd.none
+            )
+
 
 randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg
 randomSentences eng _ start =
@@ -254,7 +261,10 @@ generateScramblishGrammar =
 
 view : Model -> Html Msg
 view model =
-    div [ id "app-content" ]
+    div
+        [ id "app-content"
+        , onClick (SelectWord Nothing)
+        ]
         [ header []
             [ h1 []
                 [ text "Scramblish" ]
@@ -412,10 +422,14 @@ viewWord wordStats word =
                     , attribute "inert" ""
                     ]
 
-        classes =
-            if wordStats.hoveredWord == Just word then
+        attrs =
+            if wordStats.selectedWord == Just word then
+                [ class "word selected" ]
+
+            else if wordStats.hoveredWord == Just word then
                 [ class "word hovered"
                 , onMouseOut (HoverWord Nothing)
+                , onClickNoPropogate (SelectWord (Just word))
                 ]
 
             else
@@ -425,6 +439,11 @@ viewWord wordStats word =
     in
     span
         [ class "word-and-subscript" ]
-        [ span classes [ text word ]
+        [ span attrs [ text word ]
         , subscript
         ]
+
+
+onClickNoPropogate : msg -> Html.Attribute msg
+onClickNoPropogate msg =
+    stopPropagationOn "click" (De.succeed ( msg, True ))

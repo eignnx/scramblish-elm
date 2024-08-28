@@ -305,6 +305,14 @@ section {
     font-weight: bold;
 }
 
+.word.selected {
+    border-radius: 3px;
+    transition: ease 150ms;
+    color: rgb(244, 145, 249);
+    text-shadow: 1px 1px 10px white;
+    text-decoration: underline;
+}
+
 .word.hovered {
     border-radius: 3px;
     transition: ease 150ms;
