@@ -266,6 +266,17 @@ update msg ({ wordStats } as model) =
                         , Cmd.none
                         )
 
+                    else if word1 == word2 then
+                        ( { model
+                            | wordStats =
+                                { wordStats
+                                    | selectedWord = Nothing
+                                    , hoveredWord = Just ( lang1, word1 )
+                                }
+                          }
+                        , Cmd.none
+                        )
+
                     else
                         ( { model | wordStats = { wordStats | selectedWord = mWord } }
                         , Cmd.none

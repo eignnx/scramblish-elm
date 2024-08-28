@@ -310,7 +310,7 @@ section {
     transition: ease 150ms;
     color: rgb(244, 145, 249);
     text-decoration: underline;
-    /* text-decoration-style: dotted; */
+    text-decoration-style: dashed;
     animation: blink 750ms infinite;
 }
 
