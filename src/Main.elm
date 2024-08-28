@@ -98,6 +98,7 @@ type Msg
     | RandomWords (Req () (List (List Syllable.Syll)))
     | HoverWord (Maybe String)
     | SelectWord (Maybe String)
+    | DeleteTranslationPair { eng : String, scr : String }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -246,6 +247,19 @@ update msg ({ wordStats } as model) =
                       }
                     , Cmd.none
                     )
+
+        DeleteTranslationPair { eng, scr } ->
+            ( { model
+                | wordStats =
+                    { wordStats
+                        | userTranslations =
+                            List.filter
+                                (\other -> other.eng /= eng && other.scr /= scr)
+                                wordStats.userTranslations
+                    }
+              }
+            , Cmd.none
+            )
 
 
 randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg
@@ -502,8 +516,10 @@ viewUserTranslations wordStats userTranslations =
                                     , td [] [ viewWord wordStats scr ]
                                     , td []
                                         [ button
-                                            [ title "Delete the translation pair" ]
-                                            [ text "🗙" ]
+                                            [ title "Delete the translation pair"
+                                            , onClick (DeleteTranslationPair { eng = eng, scr = scr })
+                                            ]
+                                            [ text "x" ]
                                         ]
                                     ]
                             )
