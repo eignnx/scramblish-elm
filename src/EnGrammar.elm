@@ -30,7 +30,7 @@ en =
         , ( Nt "Noun", [ TmForm (Tm "sky") ] )
         , ( Nt "Noun", [ TmForm (Tm "river") ] )
         , ( Nt "Noun", [ TmForm (Tm "field") ] )
-        , ( Nt "Noun", [ TmForm (Tm "ox") ] )
+        , ( Nt "Noun", [ TmForm (Tm "boar") ] )
         , ( Nt "Noun", [ TmForm (Tm "hound") ] )
         , ( Nt "VerbPhrase", [ NtForm (Nt "VerbIntransitive") ] )
         , ( Nt "VerbPhrase", [ NtForm (Nt "VerbTransitive"), NtForm (Nt "NounPhrase") ] )
