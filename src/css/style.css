@@ -334,20 +334,27 @@ section {
     }
 }
 
-.word.hovered {
-    border-radius: 3px;
+.word {
     transition: ease 150ms;
-    color: rgb(244, 244, 84);
-    text-shadow: 1px 1px 10px white;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-}
+    border-radius: 3px;
 
-.word.translated {
-    border-radius: 3px;
-    transition: ease 150ms;
-    color: rgb(162, 255, 162);
-    text-decoration: underline;
+    &.hovered {
+        color: rgb(244, 244, 84);
+        text-shadow: 1px 1px 10px white;
+        text-decoration: underline;
+        text-decoration-style: dotted;
+    }
+
+    &.translated {
+        color: rgb(162, 255, 162);
+        text-decoration: underline;
+    }
+
+    &.translated.homonym {
+        color: rgb(157, 203, 157);
+        text-decoration: underline;
+        text-decoration-style: dotted;
+    }
 }
 
 .word-count {

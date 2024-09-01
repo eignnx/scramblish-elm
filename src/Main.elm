@@ -575,11 +575,8 @@ viewWord ({ displayRuby } as opts) wordStats lang word =
             if displayRuby then
                 let
                     options =
-                        -- Html.option
-                        -- [ Html.Attributes.selected True ]
-                        -- [ text (String.join ", " partners) ]
-                        -- ::
                         partners
+                            |> List.sort
                             |> List.Extra.subsequences
                             |> List.filter (List.isEmpty >> not)
                             |> List.reverse
@@ -593,13 +590,11 @@ viewWord ({ displayRuby } as opts) wordStats lang word =
                 in
                 Html.ruby
                     [ class "word-and-subscript" ]
-                    [ span attrs [ text word ]
+                    [ span (class "homonym" :: attrs) [ text word ]
                     , subscript
                     , Html.rt
                         [ class "translation" ]
-                        [ -- text (String.join ", " partners)
-                          Html.select [] options
-                        ]
+                        [ Html.select [] options ]
                     ]
 
             else
