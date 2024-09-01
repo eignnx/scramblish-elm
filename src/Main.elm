@@ -670,8 +670,11 @@ viewWord { displayRuby, wordStats, wordIsIncorrectTranslation } lang word =
             if displayRuby then
                 let
                     options =
+                        -- Html.option
+                        -- [ Html.Attributes.selected True ]
+                        -- [ text (String.join ", " partners) ]
+                        -- ::
                         partners
-                            |> List.sort
                             |> List.Extra.subsequences
                             |> List.filter (List.isEmpty >> not)
                             |> List.reverse
@@ -679,24 +682,19 @@ viewWord { displayRuby, wordStats, wordIsIncorrectTranslation } lang word =
                             |> List.map
                                 (\group ->
                                     Html.option
-                                        (Html.Attributes.value (String.join ", " group)
-                                            :: (if List.length group == 1 then
-                                                    [ class "unique-homonym-option" ]
-
-                                                else
-                                                    [ class "multi-homonym-option" ]
-                                               )
-                                        )
+                                        [ Html.Attributes.value (String.join ", " group) ]
                                         [ text (String.join ", " group) ]
                                 )
                 in
                 Html.ruby
                     [ class "word-and-subscript" ]
-                    [ span (class "homonym" :: attrs) [ text word ]
+                    [ span attrs [ text word ]
                     , subscript
                     , Html.rt
                         [ class "translation" ]
-                        [ Html.select [] options ]
+                        [ -- text (String.join ", " partners)
+                          Html.select [] options
+                        ]
                     ]
 
             else
