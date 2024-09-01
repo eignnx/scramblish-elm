@@ -288,7 +288,7 @@ update msg ({ wordStats } as model) =
                     { wordStats
                         | userTranslations =
                             List.filter
-                                (\other -> other.eng /= eng && other.scr /= scr)
+                                (\other -> not (other.eng == eng && other.scr == scr))
                                 wordStats.userTranslations
                     }
               }
