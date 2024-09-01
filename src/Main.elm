@@ -554,7 +554,7 @@ viewWord ({ displayRuby } as opts) wordStats lang word =
                 , subscript
                 ]
 
-        partners ->
+        [ partner ] ->
             if displayRuby then
                 Html.ruby
                     [ class "word-and-subscript" ]
@@ -562,7 +562,44 @@ viewWord ({ displayRuby } as opts) wordStats lang word =
                     , subscript
                     , Html.rt
                         [ class "translation" ]
-                        [ text (String.join ", " partners) ]
+                        [ text partner ]
+                    ]
+
+            else
+                span [ class "word-and-subscript" ]
+                    [ span attrs [ text word ]
+                    , subscript
+                    ]
+
+        partners ->
+            if displayRuby then
+                let
+                    options =
+                        -- Html.option
+                        -- [ Html.Attributes.selected True ]
+                        -- [ text (String.join ", " partners) ]
+                        -- ::
+                        partners
+                            |> List.Extra.subsequences
+                            |> List.filter (List.isEmpty >> not)
+                            |> List.reverse
+                            |> List.map List.sort
+                            |> List.map
+                                (\group ->
+                                    Html.option
+                                        [ Html.Attributes.value (String.join ", " group) ]
+                                        [ text (String.join ", " group) ]
+                                )
+                in
+                Html.ruby
+                    [ class "word-and-subscript" ]
+                    [ span attrs [ text word ]
+                    , subscript
+                    , Html.rt
+                        [ class "translation" ]
+                        [ -- text (String.join ", " partners)
+                          Html.select [] options
+                        ]
                     ]
 
             else
