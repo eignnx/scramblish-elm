@@ -362,14 +362,34 @@ ruby {
 
 rt {
     font-style: italic;
-}
 
-rt::before {
-    content: "(";
-}
+    &::before {
+        content: "(";
+    }
 
-rt::after {
-    content: ")";
+    &::after {
+        content: ")";
+    }
+
+    &:has(select)::before,
+    &:has(select)::after {
+        content: ""
+    }
+
+    & select {
+        font-style: oblique;
+        font-size: smaller;
+        color: white;
+        background-color: transparent;
+        border: 1px solid white;
+        border-radius: 3px;
+        padding: 0.2rem;
+    }
+
+    & option {
+        color: black;
+    }
+
 }
 
 #app-outer-content {
