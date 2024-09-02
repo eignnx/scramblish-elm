@@ -5,7 +5,7 @@ import Dict
 import EnGrammar exposing (..)
 import Grammar exposing (..)
 import Html exposing (Html, aside, button, dd, details, div, dl, dt, footer, h1, h3, header, main_, p, section, span, summary, table, td, text, th, tr)
-import Html.Attributes exposing (attribute, class, id, style, title)
+import Html.Attributes exposing (attribute, class, id, style, tabindex, title)
 import Html.Events exposing (onClick, onDoubleClick, onMouseOut, onMouseOver, stopPropagationOn)
 import Json.Decode as De
 import List.Extra
@@ -630,7 +630,18 @@ viewUserTranslations wordStats userTranslations =
     in
     aside
         [ id "user-translations" ]
-        [ table []
+        [ div [ id "wrap-user-translations-toggle" ]
+            [ Html.label
+                [ id "user-translations-toggle-label"
+                ]
+                [ Html.input
+                    [ Html.Attributes.type_ "checkbox"
+                    , id "user-translations-toggle"
+                    ]
+                    []
+                ]
+            ]
+        , table []
             (tr []
                 [ th [] [ text "English" ]
                 , th [] [ text "Scramblish" ]
@@ -646,7 +657,17 @@ viewUserTranslations wordStats userTranslations =
                         Nothing ->
                             []
                    )
-                ++ (userTranslations |> List.map viewRow)
+                ++ (if List.isEmpty userTranslations && wordStats.selectedWord == Nothing then
+                        [ tr []
+                            [ td [] [ text "—" ]
+                            , td [] [ text "—" ]
+                            , td [] [ text "—" ]
+                            ]
+                        ]
+
+                    else
+                        userTranslations |> List.map viewRow
+                   )
             )
         ]
 
