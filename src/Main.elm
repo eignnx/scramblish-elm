@@ -584,7 +584,14 @@ viewWord ({ displayRuby } as opts) wordStats lang word =
                             |> List.map
                                 (\group ->
                                     Html.option
-                                        [ Html.Attributes.value (String.join ", " group) ]
+                                        (Html.Attributes.value (String.join ", " group)
+                                            :: (if List.length group == 1 then
+                                                    [ class "unique-homonym-option" ]
+
+                                                else
+                                                    [ class "multi-homonym-option" ]
+                                               )
+                                        )
                                         [ text (String.join ", " group) ]
                                 )
                 in

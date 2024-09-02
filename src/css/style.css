@@ -345,16 +345,17 @@ section {
         text-decoration-style: dotted;
     }
 
+
     &.translated {
         color: rgb(162, 255, 162);
         text-decoration: underline;
     }
+}
 
-    &.translated.homonym {
-        color: rgb(157, 203, 157);
-        text-decoration: underline;
-        text-decoration-style: dotted;
-    }
+.word-and-subscript:has(.multi-homonym-option:checked) .word.translated {
+    color: rgb(157, 203, 157);
+    text-decoration: underline;
+    text-decoration-style: dotted;
 }
 
 .word-count {
