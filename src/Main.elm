@@ -5,7 +5,7 @@ import Dict
 import EnGrammar exposing (..)
 import Grammar exposing (..)
 import Html exposing (Html, aside, button, dd, details, div, dl, dt, footer, h1, h3, header, main_, p, section, span, summary, table, td, text, th, tr)
-import Html.Attributes exposing (attribute, class, id, style, title)
+import Html.Attributes exposing (attribute, class, id, style, tabindex, title)
 import Html.Events exposing (onClick, onDoubleClick, onMouseOut, onMouseOver, stopPropagationOn)
 import Json.Decode as De
 import List.Extra
@@ -575,11 +575,8 @@ viewWord ({ displayRuby } as opts) wordStats lang word =
             if displayRuby then
                 let
                     options =
-                        -- Html.option
-                        -- [ Html.Attributes.selected True ]
-                        -- [ text (String.join ", " partners) ]
-                        -- ::
                         partners
+                            |> List.sort
                             |> List.Extra.subsequences
                             |> List.filter (List.isEmpty >> not)
                             |> List.reverse
@@ -587,19 +584,24 @@ viewWord ({ displayRuby } as opts) wordStats lang word =
                             |> List.map
                                 (\group ->
                                     Html.option
-                                        [ Html.Attributes.value (String.join ", " group) ]
+                                        (Html.Attributes.value (String.join ", " group)
+                                            :: (if List.length group == 1 then
+                                                    [ class "unique-homonym-option" ]
+
+                                                else
+                                                    [ class "multi-homonym-option" ]
+                                               )
+                                        )
                                         [ text (String.join ", " group) ]
                                 )
                 in
                 Html.ruby
                     [ class "word-and-subscript" ]
-                    [ span attrs [ text word ]
+                    [ span (class "homonym" :: attrs) [ text word ]
                     , subscript
                     , Html.rt
                         [ class "translation" ]
-                        [ -- text (String.join ", " partners)
-                          Html.select [] options
-                        ]
+                        [ Html.select [] options ]
                     ]
 
             else
@@ -628,7 +630,18 @@ viewUserTranslations wordStats userTranslations =
     in
     aside
         [ id "user-translations" ]
-        [ table []
+        [ div [ id "wrap-user-translations-toggle" ]
+            [ Html.label
+                [ id "user-translations-toggle-label"
+                ]
+                [ Html.input
+                    [ Html.Attributes.type_ "checkbox"
+                    , id "user-translations-toggle"
+                    ]
+                    []
+                ]
+            ]
+        , table []
             (tr []
                 [ th [] [ text "English" ]
                 , th [] [ text "Scramblish" ]
@@ -644,7 +657,17 @@ viewUserTranslations wordStats userTranslations =
                         Nothing ->
                             []
                    )
-                ++ (userTranslations |> List.map viewRow)
+                ++ (if List.isEmpty userTranslations && wordStats.selectedWord == Nothing then
+                        [ tr []
+                            [ td [] [ text "—" ]
+                            , td [] [ text "—" ]
+                            , td [] [ text "—" ]
+                            ]
+                        ]
+
+                    else
+                        userTranslations |> List.map viewRow
+                   )
             )
         ]
 
