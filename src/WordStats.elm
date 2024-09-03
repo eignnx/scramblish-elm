@@ -21,6 +21,17 @@ default =
     , hoveredWord = Nothing
     , selectedWord = Nothing
     , userTranslations = []
+
+    -- [ { eng = "asdf", scr = "qwer" }
+    -- , { eng = "a2sdf", scr = "q9wer" }
+    -- , { eng = "fg8h", scr = "q9wer" }
+    -- , { eng = "cvonhasd", scr = "asfb" }
+    -- , { eng = "a2sdf", scr = "gbszxc" }
+    -- , { eng = "a2sdf", scr = "q9wer" }
+    -- , { eng = "sadfads", scr = "asdfnbcv" }
+    -- , { eng = "tdfjsk", scr = "dfadlk" }
+    -- , { eng = "aodfb", scr = "cvbnak" }
+    -- ]
     }
 
 
