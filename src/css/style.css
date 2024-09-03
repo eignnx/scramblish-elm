@@ -338,18 +338,30 @@ section {
     transition: ease 150ms;
     border-radius: 3px;
 
-    &.hovered {
-        color: rgb(244, 244, 84);
-        text-shadow: 1px 1px 10px white;
-        text-decoration: underline;
-        text-decoration-style: dotted;
+    &:not(.incorrect-translation) {
+
+        &.hovered {
+            color: rgb(244, 244, 84);
+            text-shadow: 1px 1px 10px white;
+            text-decoration: underline;
+            text-decoration-style: dotted;
+        }
+
+        &.translated {
+            color: rgb(162, 255, 162);
+            text-decoration: underline;
+        }
     }
 
 
-    &.translated {
-        color: rgb(162, 255, 162);
-        text-decoration: underline;
+    &.incorrect-translation {
+        color: rgb(255, 137, 137);
+        text-decoration: red wavy underline;
+        text-decoration-thickness: 1px;
+        text-decoration-line: spelling-error;
     }
+
+
 }
 
 .word-and-subscript:has(.multi-homonym-option:checked) .word.translated {
@@ -402,6 +414,42 @@ rt {
 
 #app-outer-content {
     position: absolute;
+}
+
+#answer-checking-toggle {
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    border-radius: 0 50% 50% 0;
+    border: none;
+
+    width: min-content;
+    margin: 0;
+    padding: 0.65rem;
+
+    font-family: serif;
+    font-size: larger;
+
+    background-color: rgba(90, 97, 196, 0.623);
+
+    &.answer-checking-on {
+        background-color: goldenrod;
+        outline: 3px dashed rgb(143, 110, 0);
+    }
+
+    &:hover {
+
+        &.answer-checking-off {
+            outline: 2px solid white;
+            background-color: rgba(180, 185, 253, 0.623);
+        }
+
+        &.answer-checking-on {
+            outline: 2px solid rgb(143, 110, 0);
+            background-color: rgb(150, 116, 32);
+        }
+    }
 }
 
 #wrap-user-translations-toggle {

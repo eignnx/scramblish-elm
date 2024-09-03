@@ -5,8 +5,8 @@ import Dict
 import EnGrammar exposing (..)
 import Grammar exposing (..)
 import Html exposing (Html, aside, button, dd, details, div, dl, dt, footer, h1, h3, header, main_, p, section, span, summary, table, td, text, th, tr)
-import Html.Attributes exposing (attribute, class, id, style, tabindex, title)
-import Html.Events exposing (onClick, onDoubleClick, onMouseOut, onMouseOver, stopPropagationOn)
+import Html.Attributes exposing (attribute, class, id, style, title)
+import Html.Events exposing (onClick, onMouseOut, onMouseOver, stopPropagationOn)
 import Json.Decode as De
 import List.Extra
 import Logic.Builtins
@@ -17,7 +17,6 @@ import Platform.Cmd as Cmd exposing (Cmd)
 import Random
 import Req exposing (..)
 import Seq
-import Set
 import Utils
 import WordGen.Gen as WordGen
 import WordGen.Ortho
@@ -68,7 +67,7 @@ init _ =
       , sampleSyllables = []
       , sampleWords = []
       , wordStats = WordStats.default
-      , answerCheckingMode = True
+      , answerCheckingMode = False
       }
     , Cmd.batch
         [ generateScramblishGrammar
@@ -345,8 +344,50 @@ generateScramblishGrammar =
 
 view : Model -> Html Msg
 view model =
+    let
+        incorrectTranslations =
+            if model.answerCheckingMode then
+                model.wordStats.userTranslations
+                    |> List.filter
+                        (\{ eng, scr } ->
+                            Dict.get eng model.scramblishGrammar.wordMapping /= Just scr
+                        )
+
+            else
+                []
+    in
     div [ id "app-outer-wrapper" ]
-        [ viewUserTranslations model.wordStats model.wordStats.userTranslations
+        [ viewUserTranslations
+            { wordStats = model.wordStats
+            , incorrectTranslations = incorrectTranslations
+            }
+            model.wordStats.userTranslations
+        , button
+            [ id "answer-checking-toggle"
+            , title
+                (if model.answerCheckingMode then
+                    "Answers Revealed"
+
+                 else
+                    "Check Answers"
+                )
+            , class
+                (if model.answerCheckingMode then
+                    "answer-checking-on"
+
+                 else
+                    "answer-checking-off"
+                )
+            , onClick ToggleCheckAnswers
+            ]
+            [ text
+                (if model.answerCheckingMode then
+                    "👀"
+
+                 else
+                    "🕶"
+                )
+            ]
         , div
             [ id "app-content"
             , onClick (SelectWord Nothing)
@@ -362,6 +403,7 @@ view model =
                                 |> List.indexedMap
                                     (sentenceExampleView
                                         model
+                                        incorrectTranslations
                                         model.scramblishGrammar
                                     )
                            )
@@ -464,8 +506,8 @@ viewUSet u =
         |> div []
 
 
-sentenceExampleView : Model -> GrammarMut -> Int -> SyntaxTree -> Html Msg
-sentenceExampleView model grammarMut index engTree =
+sentenceExampleView : Model -> List { eng : String, scr : String } -> GrammarMut -> Int -> SyntaxTree -> Html Msg
+sentenceExampleView model incorrectTranslations grammarMut index engTree =
     let
         scrTree =
             mutateSyntaxTree grammarMut engTree
@@ -475,26 +517,51 @@ sentenceExampleView model grammarMut index engTree =
         , dl [ class "translation" ]
             [ div []
                 [ dt [] [ text "Scramblish:" ]
-                , dd [] [ syntaxTreeView model grammarMut.wordGenerator.orthography.title Scramblish scrTree ]
+                , dd []
+                    [ syntaxTreeView
+                        model
+                        incorrectTranslations
+                        grammarMut.wordGenerator.orthography.title
+                        Scramblish
+                        scrTree
+                    ]
                 ]
             , div []
                 [ dt [] [ text "English:" ]
-                , dd [] [ syntaxTreeView model "english" English engTree ]
+                , dd []
+                    [ syntaxTreeView
+                        model
+                        incorrectTranslations
+                        "english"
+                        English
+                        engTree
+                    ]
                 ]
             ]
         ]
 
 
-syntaxTreeView : Model -> String -> Lang -> SyntaxTree -> Html Msg
-syntaxTreeView { answerCheckingMode, wordStats } scriptName lang tree =
+syntaxTreeView : Model -> List { eng : String, scr : String } -> String -> Lang -> SyntaxTree -> Html Msg
+syntaxTreeView { answerCheckingMode, wordStats } incorrectTranslations scriptName lang tree =
     syntaxTreeToWordList tree
         |> List.map
-            (viewWord
-                { displayRuby = True
-                , answerCheckingMode = answerCheckingMode
-                , wordStats = wordStats
-                }
-                lang
+            (\word ->
+                viewWord
+                    { displayRuby = True
+                    , wordIsIncorrectTranslation =
+                        answerCheckingMode
+                            && List.member word
+                                (case lang of
+                                    English ->
+                                        List.map .eng incorrectTranslations
+
+                                    Scramblish ->
+                                        List.map .scr incorrectTranslations
+                                )
+                    , wordStats = wordStats
+                    }
+                    lang
+                    word
             )
         |> List.intersperse (span [ class "whitespace" ] [ text " " ])
         |> span [ class "sentence", class ("script-name--" ++ String.join "-" (String.split " " scriptName)) ]
@@ -502,13 +569,13 @@ syntaxTreeView { answerCheckingMode, wordStats } scriptName lang tree =
 
 type alias ViewWordProps =
     { displayRuby : Bool
-    , answerCheckingMode : Bool
+    , wordIsIncorrectTranslation : Bool
     , wordStats : WordStats
     }
 
 
 viewWord : ViewWordProps -> Lang -> String -> Html Msg
-viewWord ({ displayRuby, wordStats } as opts) lang word =
+viewWord { displayRuby, wordStats, wordIsIncorrectTranslation } lang word =
     let
         count =
             WordStats.getCountForWord wordStats lang word
@@ -564,6 +631,12 @@ viewWord ({ displayRuby, wordStats } as opts) lang word =
                             /= Nothing
                     then
                         [ class "translated" ]
+
+                    else
+                        []
+                   )
+                ++ (if wordIsIncorrectTranslation then
+                        [ class "incorrect-translation" ]
 
                     else
                         []
@@ -633,13 +706,25 @@ viewWord ({ displayRuby, wordStats } as opts) lang word =
                     ]
 
 
-viewUserTranslations : WordStats -> List { eng : String, scr : String } -> Html Msg
-viewUserTranslations wordStats userTranslations =
-    let
-        viewWordProps =
-            { displayRuby = False, wordStats = wordStats, answerCheckingMode = False }
+type alias ViewUserTranslationsProps =
+    { wordStats : WordStats
+    , incorrectTranslations : List { eng : String, scr : String }
+    }
 
+
+viewUserTranslations : ViewUserTranslationsProps -> List { eng : String, scr : String } -> Html Msg
+viewUserTranslations { wordStats, incorrectTranslations } userTranslations =
+    let
         viewRow { eng, scr } =
+            let
+                viewWordProps : ViewWordProps
+                viewWordProps =
+                    { displayRuby = False
+                    , wordStats = wordStats
+                    , wordIsIncorrectTranslation =
+                        List.member { eng = eng, scr = scr } incorrectTranslations
+                    }
+            in
             tr []
                 [ td [] [ viewWord viewWordProps English eng ]
                 , td [] [ viewWord viewWordProps Scramblish scr ]
