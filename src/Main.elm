@@ -631,9 +631,7 @@ viewUserTranslations wordStats userTranslations =
     aside
         [ id "user-translations" ]
         [ div [ id "wrap-user-translations-toggle" ]
-            [ Html.label
-                [ id "user-translations-toggle-label"
-                ]
+            [ Html.label [ id "user-translations-toggle-label" ]
                 [ Html.input
                     [ Html.Attributes.type_ "checkbox"
                     , id "user-translations-toggle"
@@ -641,34 +639,36 @@ viewUserTranslations wordStats userTranslations =
                     []
                 ]
             ]
-        , table []
-            (tr []
-                [ th [] [ text "English" ]
-                , th [] [ text "Scramblish" ]
-                , th [] []
-                ]
-                :: (case wordStats.selectedWord of
-                        Just ( English, eng ) ->
-                            [ viewRow { eng = eng, scr = "—" } ]
+        , div [ id "user-translations-table-wrap" ]
+            [ table []
+                (tr []
+                    [ th [] [ text "English" ]
+                    , th [] [ text "Scramblish" ]
+                    , th [] []
+                    ]
+                    :: (case wordStats.selectedWord of
+                            Just ( English, eng ) ->
+                                [ viewRow { eng = eng, scr = "—" } ]
 
-                        Just ( Scramblish, scr ) ->
-                            [ viewRow { eng = "—", scr = scr } ]
+                            Just ( Scramblish, scr ) ->
+                                [ viewRow { eng = "—", scr = scr } ]
 
-                        Nothing ->
-                            []
-                   )
-                ++ (if List.isEmpty userTranslations && wordStats.selectedWord == Nothing then
-                        [ tr []
-                            [ td [] [ text "—" ]
-                            , td [] [ text "—" ]
-                            , td [] [ text "—" ]
+                            Nothing ->
+                                []
+                       )
+                    ++ (if List.isEmpty userTranslations && wordStats.selectedWord == Nothing then
+                            [ tr []
+                                [ td [] [ text "—" ]
+                                , td [] [ text "—" ]
+                                , td [] [ text "—" ]
+                                ]
                             ]
-                        ]
 
-                    else
-                        userTranslations |> List.map viewRow
-                   )
-            )
+                        else
+                            userTranslations |> List.map viewRow
+                       )
+                )
+            ]
         ]
 
 
