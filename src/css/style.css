@@ -417,27 +417,13 @@ rt {
     padding: 0.5rem;
     display: block;
 
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+    border-radius: 50% 0 0 50%;
 
-
-    @media (width > 800px) {
-        & {
-            right: 0;
-            bottom: 0;
-            transform: translateX(0%) translateY(100%);
-            border-radius: 0% 0% 50% 50%;
-        }
-    }
-
-    @media (width <=800px) {
-        & {
-            right: 0;
-            top: 0;
-            transform: translateX(0%) translateY(-100%);
-            border-radius: 50%;
-            /* border-radius: 50% 50% 0% 0%; */
-            /* padding-block-end: 1rem; */
-        }
-    }
+    transition: background-color 100ms ease,
+        outline 100ms ease;
 
     &:hover {
         background-color: color-mix(in oklab, goldenrod, white);
@@ -457,10 +443,7 @@ rt {
 }
 
 #user-translations:has(#user-translations-toggle:checked) {
-
-    & {
-        transform: translateY(0);
-    }
+    transform: translateX(0);
 
     & #user-translations-toggle-label {
 
@@ -475,58 +458,33 @@ rt {
     position: fixed;
 
     background-color: rgba(46, 49, 75, 0.8);
-    padding: 1rem;
 
     display: flex;
     justify-content: center;
 
     backdrop-filter: blur(8px);
 
-    transition: transform ease-out 150ms;
+    transition: transform ease 150ms;
 
 
-    @media (width > 800px) {
-        & {
-            top: 0;
-            right: 0;
-            border-radius: 0 0 0 0.25rem;
-            border-bottom: 2px solid goldenrod;
-            border-left: 2px solid goldenrod;
-            max-height: 40dvh;
+    top: 0;
+    right: 0;
+    border-radius: 0 0 0 0.25rem;
+    border-bottom: 2px solid goldenrod;
+    border-left: 2px solid goldenrod;
+    height: 100dvh;
 
-            transform: translateY(-100%);
-        }
+    transform: translateX(100%);
 
-        & th {
-            font-size: smaller;
-        }
+    & #user-translations-table-wrap {
+        overflow-y: scroll;
+        width: 100%;
     }
 
-    @media (width <=800px) {
-        & {
-            bottom: 0;
-            right: 0;
-            left: 0;
-            border-radius: 1rem 1rem 0 0;
-            max-height: 30dvh;
-            border-top: 2px solid goldenrod;
-
-            transform: translateY(100%);
-        }
-
-        & table {
-            margin-inline: 3rem;
-        }
-
-        & th {
-            font-size: small;
-        }
-    }
 
     & table {
         width: 100%;
         border-collapse: collapse;
-        overflow-y: auto;
     }
 
     /* continue formatting for table */
