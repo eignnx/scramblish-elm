@@ -624,7 +624,7 @@ viewUserTranslations wordStats userTranslations =
                         , onClick
                             (DeleteTranslationPair { eng = eng, scr = scr })
                         ]
-                        [ text "x" ]
+                        [ text "🗙" ]
                     ]
                 ]
     in
