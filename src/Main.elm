@@ -50,6 +50,7 @@ type alias Model =
     , sampleSyllables : List Syllable.Syll
     , sampleWords : List (List Syllable.Syll)
     , wordStats : WordStats
+    , answerCheckingMode : Bool
     }
 
 
@@ -67,6 +68,7 @@ init _ =
       , sampleSyllables = []
       , sampleWords = []
       , wordStats = WordStats.default
+      , answerCheckingMode = True
       }
     , Cmd.batch
         [ generateScramblishGrammar
@@ -99,6 +101,7 @@ type Msg
     | HoverWord (Maybe ( Lang, String ))
     | SelectWord (Maybe ( Lang, String ))
     | DeleteTranslationPair { eng : String, scr : String }
+    | ToggleCheckAnswers
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -295,6 +298,11 @@ update msg ({ wordStats } as model) =
             , Cmd.none
             )
 
+        ToggleCheckAnswers ->
+            ( { model | answerCheckingMode = not model.answerCheckingMode }
+            , Cmd.none
+            )
+
 
 randomSentences : Grammar -> GrammarMut -> String -> Cmd Msg
 randomSentences eng _ start =
@@ -353,7 +361,7 @@ view model =
                         :: (model.examples
                                 |> List.indexedMap
                                     (sentenceExampleView
-                                        model.wordStats
+                                        model
                                         model.scramblishGrammar
                                     )
                            )
@@ -456,8 +464,8 @@ viewUSet u =
         |> div []
 
 
-sentenceExampleView : WordStats -> GrammarMut -> Int -> SyntaxTree -> Html Msg
-sentenceExampleView wordStats grammarMut index engTree =
+sentenceExampleView : Model -> GrammarMut -> Int -> SyntaxTree -> Html Msg
+sentenceExampleView model grammarMut index engTree =
     let
         scrTree =
             mutateSyntaxTree grammarMut engTree
@@ -467,26 +475,40 @@ sentenceExampleView wordStats grammarMut index engTree =
         , dl [ class "translation" ]
             [ div []
                 [ dt [] [ text "Scramblish:" ]
-                , dd [] [ syntaxTreeView wordStats grammarMut.wordGenerator.orthography.title Scramblish scrTree ]
+                , dd [] [ syntaxTreeView model grammarMut.wordGenerator.orthography.title Scramblish scrTree ]
                 ]
             , div []
                 [ dt [] [ text "English:" ]
-                , dd [] [ syntaxTreeView wordStats "english" English engTree ]
+                , dd [] [ syntaxTreeView model "english" English engTree ]
                 ]
             ]
         ]
 
 
-syntaxTreeView : WordStats -> String -> Lang -> SyntaxTree -> Html Msg
-syntaxTreeView wordStats scriptName lang tree =
+syntaxTreeView : Model -> String -> Lang -> SyntaxTree -> Html Msg
+syntaxTreeView { answerCheckingMode, wordStats } scriptName lang tree =
     syntaxTreeToWordList tree
-        |> List.map (viewWord { displayRuby = True } wordStats lang)
+        |> List.map
+            (viewWord
+                { displayRuby = True
+                , answerCheckingMode = answerCheckingMode
+                , wordStats = wordStats
+                }
+                lang
+            )
         |> List.intersperse (span [ class "whitespace" ] [ text " " ])
         |> span [ class "sentence", class ("script-name--" ++ String.join "-" (String.split " " scriptName)) ]
 
 
-viewWord : { displayRuby : Bool } -> WordStats -> Lang -> String -> Html Msg
-viewWord ({ displayRuby } as opts) wordStats lang word =
+type alias ViewWordProps =
+    { displayRuby : Bool
+    , answerCheckingMode : Bool
+    , wordStats : WordStats
+    }
+
+
+viewWord : ViewWordProps -> Lang -> String -> Html Msg
+viewWord ({ displayRuby, wordStats } as opts) lang word =
     let
         count =
             WordStats.getCountForWord wordStats lang word
@@ -614,10 +636,13 @@ viewWord ({ displayRuby } as opts) wordStats lang word =
 viewUserTranslations : WordStats -> List { eng : String, scr : String } -> Html Msg
 viewUserTranslations wordStats userTranslations =
     let
+        viewWordProps =
+            { displayRuby = False, wordStats = wordStats, answerCheckingMode = False }
+
         viewRow { eng, scr } =
             tr []
-                [ td [] [ viewWord { displayRuby = False } wordStats English eng ]
-                , td [] [ viewWord { displayRuby = False } wordStats Scramblish scr ]
+                [ td [] [ viewWord viewWordProps English eng ]
+                , td [] [ viewWord viewWordProps Scramblish scr ]
                 , td []
                     [ button
                         [ title "Delete the translation pair"
