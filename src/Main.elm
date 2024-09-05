@@ -367,7 +367,7 @@ view model =
                     [ text "Scramblish" ]
                 ]
             , main_ []
-                [ details []
+                [ details [ attribute "open" "true" ]
                     (summary [] [ text "Sentence Examples" ]
                         :: (model.examples
                                 |> List.indexedMap
@@ -379,7 +379,7 @@ view model =
                            )
                         ++ [ button [ onClick (RandomExample (Ask ())) ] [ text "+ Additional Example" ] ]
                     )
-                , details [ attribute "open" "true" ]
+                , details []
                     [ summary [] [ text "Word Generation" ]
                     , button [ onClick (MutateEnGrammar (Ask ())) ] [ text "⟳ Regenerate Scramblish" ]
                     , WordGen.viewPhonology model.scramblishGrammar.wordGenerator.phonology
