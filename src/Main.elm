@@ -357,11 +357,7 @@ view model =
                 []
     in
     div [ id "app-outer-wrapper" ]
-        [ viewUserTranslations
-            { wordStats = model.wordStats
-            , incorrectTranslations = incorrectTranslations
-            }
-            model.wordStats.userTranslations
+        [ viewSidePanel model incorrectTranslations
         , button
             [ id "answer-checking-toggle"
             , title
@@ -397,7 +393,7 @@ view model =
                     [ text "Scramblish" ]
                 ]
             , main_ []
-                [ details [ attribute "open" "false" ]
+                [ details []
                     (summary [] [ text "Sentence Examples" ]
                         :: (model.examples
                                 |> List.indexedMap
@@ -484,6 +480,14 @@ view model =
                 [ text "© 2024" ]
             ]
         ]
+
+
+viewSidePanel model incorrectTranslations =
+    viewUserTranslations
+        { wordStats = model.wordStats
+        , incorrectTranslations = incorrectTranslations
+        }
+        model.wordStats.userTranslations
 
 
 viewUSet : T.USet -> Html msg
