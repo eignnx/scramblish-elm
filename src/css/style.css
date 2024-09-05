@@ -311,7 +311,7 @@ section {
 .word.selected {
     border-radius: 3px;
     transition: ease 150ms;
-    color: rgb(244, 145, 249);
+    color: color-mix(in oklab, goldenrod, grey);
     text-decoration: underline;
     text-decoration-style: dashed;
     animation: blink 750ms infinite;
@@ -338,18 +338,19 @@ section {
     transition: ease 150ms;
     border-radius: 3px;
 
-    &:not(.incorrect-translation) {
+    &:not(.incorrect-translation, .correct-translation) {
 
         &.hovered {
-            color: rgb(244, 244, 84);
+            color: gold;
             text-shadow: 1px 1px 10px white;
             text-decoration: underline;
             text-decoration-style: dotted;
         }
 
         &.translated {
-            color: rgb(162, 255, 162);
-            text-decoration: underline;
+            color: goldenrod;
+            font-weight: bold;
+            text-decoration: solid underline;
         }
     }
 
@@ -359,15 +360,25 @@ section {
         text-decoration: red wavy underline;
         text-decoration-thickness: 1px;
         text-decoration-line: spelling-error;
+        font-weight: bold;
     }
 
+    &.correct-translation {
+        color: limegreen;
+        text-decoration: solid underline;
+        text-decoration-thickness: 1px;
+        text-decoration-line: spelling-error;
+        font-weight: bold;
+    }
 
 }
 
 .word-and-subscript:has(.multi-homonym-option:checked) .word.translated {
-    color: rgb(157, 203, 157);
+    color: color-mix(in oklab, #ff6203, white);
     text-decoration: underline;
     text-decoration-style: dotted;
+    background-color: rgba(255, 72, 0, 0.36);
+    padding-inline: 0.9rem;
 }
 
 .word-count {
