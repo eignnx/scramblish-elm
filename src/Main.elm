@@ -5,7 +5,7 @@ import Dict
 import EnGrammar exposing (..)
 import Grammar exposing (..)
 import Html exposing (Html, aside, button, dd, details, div, dl, dt, footer, h1, h3, header, main_, p, section, span, summary, table, td, text, th, tr)
-import Html.Attributes exposing (attribute, class, id, style, title)
+import Html.Attributes exposing (alt, attribute, class, id, src, style, title)
 import Html.Events exposing (onClick, onMouseOut, onMouseOver, stopPropagationOn)
 import Json.Decode as De
 import List.Extra
@@ -357,37 +357,7 @@ view model =
                 []
     in
     div [ id "app-outer-wrapper" ]
-        [ viewUserTranslations
-            { wordStats = model.wordStats
-            , incorrectTranslations = incorrectTranslations
-            }
-            model.wordStats.userTranslations
-        , button
-            [ id "answer-checking-toggle"
-            , title
-                (if model.answerCheckingMode then
-                    "Answers Revealed"
-
-                 else
-                    "Check Answers"
-                )
-            , class
-                (if model.answerCheckingMode then
-                    "answer-checking-on"
-
-                 else
-                    "answer-checking-off"
-                )
-            , onClick ToggleCheckAnswers
-            ]
-            [ text
-                (if model.answerCheckingMode then
-                    "👀"
-
-                 else
-                    "🕶"
-                )
-            ]
+        [ viewSidePanel model incorrectTranslations
         , div
             [ id "app-content"
             , onClick (SelectWord Nothing)
@@ -397,7 +367,7 @@ view model =
                     [ text "Scramblish" ]
                 ]
             , main_ []
-                [ details [ attribute "open" "false" ]
+                [ details [ attribute "open" "true" ]
                     (summary [] [ text "Sentence Examples" ]
                         :: (model.examples
                                 |> List.indexedMap
@@ -409,7 +379,7 @@ view model =
                            )
                         ++ [ button [ onClick (RandomExample (Ask ())) ] [ text "+ Additional Example" ] ]
                     )
-                , details [ attribute "open" "true" ]
+                , details []
                     [ summary [] [ text "Word Generation" ]
                     , button [ onClick (MutateEnGrammar (Ask ())) ] [ text "⟳ Regenerate Scramblish" ]
                     , WordGen.viewPhonology model.scramblishGrammar.wordGenerator.phonology
@@ -484,6 +454,46 @@ view model =
                 [ text "© 2024" ]
             ]
         ]
+
+
+viewSidePanel model incorrectTranslations =
+    viewUserTranslations
+        { wordStats = model.wordStats
+        , incorrectTranslations = incorrectTranslations
+        }
+        model.wordStats.userTranslations
+        { buttons =
+            [ \_ attrs ->
+                button
+                    (attrs
+                        ++ [ id "answer-checking-toggle"
+                           , title
+                                (if model.answerCheckingMode then
+                                    "Answers Revealed"
+
+                                 else
+                                    "Check Answers"
+                                )
+                           , class
+                                (if model.answerCheckingMode then
+                                    "answer-checking-on"
+
+                                 else
+                                    "answer-checking-off"
+                                )
+                           , onClick ToggleCheckAnswers
+                           ]
+                    )
+                    [ text
+                        (if model.answerCheckingMode then
+                            "👀"
+
+                         else
+                            "🕶"
+                        )
+                    ]
+            ]
+        }
 
 
 viewUSet : T.USet -> Html msg
@@ -710,8 +720,12 @@ type alias ViewUserTranslationsProps =
     }
 
 
-viewUserTranslations : ViewUserTranslationsProps -> List { eng : String, scr : String } -> Html Msg
-viewUserTranslations { wordStats, incorrectTranslations } userTranslations =
+viewUserTranslations :
+    ViewUserTranslationsProps
+    -> List { eng : String, scr : String }
+    -> { buttons : List (Int -> List (Html.Attribute Msg) -> Html Msg) }
+    -> Html Msg
+viewUserTranslations { wordStats, incorrectTranslations } userTranslations { buttons } =
     let
         viewRow { eng, scr } =
             let
@@ -732,21 +746,27 @@ viewUserTranslations { wordStats, incorrectTranslations } userTranslations =
                         , onClick
                             (DeleteTranslationPair { eng = eng, scr = scr })
                         ]
-                        [ text "🗙" ]
+                        [ Html.img
+                            [ src "assets/delete_24dp_GOLDENROD_FILL0_wght400_GRAD0_opsz24.svg"
+                            , alt "Delete translation pair"
+                            ]
+                            []
+                        ]
                     ]
                 ]
     in
     aside
-        [ id "user-translations" ]
-        [ div [ id "wrap-user-translations-toggle" ]
-            [ Html.label [ id "user-translations-toggle-label" ]
+        [ id "side-panel" ]
+        [ div [ id "wrap-side-btns" ]
+            (Html.label [ id "side-panel-toggle-label", class "side-panel-btn" ]
                 [ Html.input
                     [ Html.Attributes.type_ "checkbox"
-                    , id "user-translations-toggle"
+                    , id "side-panel-toggle"
                     ]
                     []
                 ]
-            ]
+                :: List.indexedMap (\idx btn -> btn idx [ class "side-panel-btn" ]) buttons
+            )
         , div [ id "user-translations-table-wrap" ]
             [ table []
                 (tr []
