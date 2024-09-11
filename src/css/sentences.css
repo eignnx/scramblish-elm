@@ -1,0 +1,80 @@
+.sentence {
+    font-size: larger;
+    text-wrap: wrap;
+    line-height: 1.5em;
+}
+
+.sentence::after {
+    content: "."
+}
+
+.sentence .word-and-subscript:first-child {
+    text-transform: capitalize;
+}
+
+.word:hover {
+    cursor: pointer;
+    text-shadow:
+        1px 1px 10px white,
+        3px 3px 1px black;
+    transition: text-shadow 100ms;
+}
+
+.example {
+    display: flex;
+}
+
+@media (width <=800px) {
+    .example {
+        flex-direction: column;
+    }
+
+    .example h3 {
+        text-decoration: underline solid goldenrod;
+    }
+
+    .example div {
+        margin-block-start: 1.5rem;
+    }
+}
+
+@media (width > 800px) {
+    .example {
+        flex-direction: row;
+        width: 100%;
+    }
+
+    .example dl {
+        width: 80%;
+    }
+
+    .example .translation>* {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .sentence {
+        padding-inline-start: 1rem;
+    }
+
+    .example h3 {
+        margin-inline-end: 1rem;
+        padding-inline-end: 1rem;
+        border-inline-end: 2px solid goldenrod;
+    }
+
+}
+
+.example dt {
+    font-weight: bold;
+    font-variant: petite-caps;
+    font-size: smaller;
+}
+
+.script-name--roman {
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.script-name--old-italic {
+    font-family: Arial, Helvetica, sans-serif;
+}

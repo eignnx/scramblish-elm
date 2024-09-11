@@ -1,0 +1,100 @@
+:root {
+    --color-bg: rgb(32, 32, 59);
+    --color-text: white;
+
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#app-content {
+    display: grid;
+    grid-template-columns: 1fr minmax(auto, 1000px) 1fr;
+
+    @media (max-width: 900px) {
+        grid-template-columns: 1fr 10fr 1fr;
+    }
+
+    /* For side panel relative positioning. */
+    position: absolute;
+}
+
+#app-outer-wrapper {
+    isolation: isolate;
+
+    & #side-panel {
+        z-index: 10;
+    }
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-block-start: 1rem;
+    width: 100%;
+    grid-column: 2/3;
+}
+
+main {
+    margin-block-start: 1rem;
+    grid-column: 2/3;
+}
+
+footer {
+    margin-block-start: 1rem;
+    border-block-start: 2px solid goldenrod;
+    padding-block: 1rem;
+    text-align: center;
+    grid-column: 2/3;
+}
+
+button {
+    padding-block: 0.5rem;
+    padding-inline: 0.75rem;
+    margin: 0.25rem;
+    border-radius: 5px;
+    font-weight: bold;
+
+    background-color: rgba(28, 28, 71, 0.8);
+    color: white;
+
+    transition:
+        background-color ease-out 200ms,
+        color ease-out 200ms;
+}
+
+button:hover {
+    background-color: white;
+    color: black;
+}
+
+details {
+    margin-block-start: 1rem;
+    border-inline-start: 2px solid goldenrod;
+    padding-inline-start: 1rem;
+}
+
+summary {
+    cursor: pointer;
+    padding-block: 0.5rem;
+    font-size: larger;
+    font-weight: bold;
+}
+
+summary:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 800px) {
+
+    span,
+    button,
+    div {
+        font-size: 20pt;
+    }
+}
+
+section {
+    margin-block-start: 1rem;
+}

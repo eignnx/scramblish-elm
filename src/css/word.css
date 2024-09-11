@@ -1,0 +1,118 @@
+.word {
+    display: inline-block;
+}
+
+.word.selected {
+    border-radius: 3px;
+    transition: ease 150ms;
+    color: color-mix(in oklab, goldenrod, grey);
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    animation: blink 750ms infinite;
+}
+
+@keyframes blink {
+    0% {
+        text-decoration-color: inherit;
+        text-shadow: 1px 1px 20px rgba(255, 255, 255, 0.5);
+    }
+
+    50% {
+        text-decoration-color: transparent;
+        text-shadow: none;
+    }
+
+    100% {
+        text-decoration-color: inherit;
+        text-shadow: 1px 1px 20px rgba(255, 255, 255, 0.5);
+    }
+}
+
+.word {
+    transition: ease 150ms;
+    border-radius: 3px;
+
+    &:not(.incorrect-translation, .correct-translation) {
+
+        &.hovered {
+            color: gold;
+            text-shadow: 1px 1px 10px white;
+            text-decoration: underline;
+            text-decoration-style: dotted;
+        }
+
+        &.translated {
+            color: goldenrod;
+            font-weight: bold;
+            text-decoration: solid underline;
+        }
+    }
+
+
+    &.incorrect-translation {
+        color: rgb(255, 137, 137);
+        text-decoration: red wavy underline;
+        text-decoration-thickness: 1px;
+        text-decoration-line: spelling-error;
+        font-weight: bold;
+    }
+
+    &.correct-translation {
+        color: limegreen;
+        text-decoration: solid underline;
+        text-decoration-thickness: 1px;
+        text-decoration-line: spelling-error;
+        font-weight: bold;
+    }
+
+}
+
+.word-and-subscript:has(.multi-homonym-option:checked) .word.translated {
+    color: color-mix(in oklab, #ff6203, white);
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    background-color: rgba(255, 72, 0, 0.36);
+    padding-inline: 0.9rem;
+}
+
+.word-count {
+    color: rgba(255, 255, 255, 0.75);
+    vertical-align: sub;
+    font-size: x-small;
+}
+
+ruby {
+    ruby-position: under;
+}
+
+rt {
+    font-style: italic;
+
+    &::before {
+        content: "(";
+    }
+
+    &::after {
+        content: ")";
+    }
+
+    &:has(select)::before,
+    &:has(select)::after {
+        content: ""
+    }
+
+    & select {
+        font-style: oblique;
+        font-size: smaller;
+        color: white;
+        background-color: transparent;
+        border: 1px solid white;
+        border-radius: 3px;
+        padding: 0.2rem;
+    }
+
+    & option {
+        color: black;
+    }
+
+}
