@@ -1,0 +1,153 @@
+#answer-checking-toggle {
+    background-color: rgba(90, 97, 196);
+    translate: 0 110%;
+
+    &.answer-checking-on {
+        background-color: goldenrod;
+        outline: 2px dashed rgb(143, 110, 0);
+    }
+
+    &:hover {
+
+        &.answer-checking-off {
+            outline: 2px solid white;
+            background-color: rgba(180, 185, 253, 0.623);
+        }
+
+        &.answer-checking-on {
+            outline: 2px solid rgb(143, 110, 0);
+            background-color: rgb(150, 116, 32);
+        }
+    }
+}
+
+#wrap-side-btns {
+    position: absolute;
+}
+
+.side-panel-btn {
+    position: fixed;
+    display: block;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+
+    width: min-content;
+    padding: 0.5rem;
+    margin: 0;
+
+    border: 2px solid rgb(100% 100% 100% / 0.5);
+    border-radius: 50% 0 0 50%;
+
+    font-family: serif;
+    font-size: x-large;
+
+    transition:
+        background-color 100ms ease,
+        outline 100ms ease;
+}
+
+#side-panel-toggle-label {
+    background-color: goldenrod;
+
+
+
+    &:hover {
+        background-color: color-mix(in oklab, goldenrod, white);
+        outline: 2px solid white;
+    }
+
+
+    &::before {
+        content: "📘";
+    }
+}
+
+#side-panel-toggle {
+    appearance: none;
+}
+
+#side-panel:has(#side-panel-toggle:checked) {
+    transform: translateX(0);
+
+    & #side-panel-toggle-label {
+
+        &::before {
+            content: "📖";
+            padding: 0.1rem;
+        }
+    }
+}
+
+#side-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    transform: translateX(100%);
+    transition: transform ease 150ms;
+    height: 100dvh;
+    max-width: 80svw;
+
+    background-color: rgba(188, 194, 252, 0.1);
+    backdrop-filter: blur(8px);
+
+    border-left: 3px solid goldenrod;
+
+    display: flex;
+    justify-content: center;
+
+    box-shadow: -10px 0px 20px 0px rgb(69, 71, 117);
+
+
+    & #user-translations-table-wrap {
+        overflow-y: scroll;
+        width: 100%;
+    }
+
+
+    & table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    /* continue formatting for table */
+    & th,
+    td {
+        border: 1px solid goldenrod;
+        padding: 0.2rem;
+        text-align: center;
+    }
+
+    & th {
+        border-bottom: 4px double goldenrod;
+    }
+
+    & tr:nth-child(even) {
+        background-color: rgba(0, 0, 0, 0.3);
+    }
+
+    & td:has(button) {
+        padding: 0;
+    }
+
+    & table button {
+        padding: 0.75rem;
+        text-align: center;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        border-radius: 0;
+        border: none;
+        background-color: transparent;
+        color: white;
+        font-family: sans-serif;
+    }
+
+    & table button:hover {
+        background-color: rgba(100% 100% 100% / 0.9);
+    }
+
+    & table button:active {
+        background-color: white;
+    }
+}

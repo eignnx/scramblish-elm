@@ -1,0 +1,26 @@
+.wordgen-lang {
+    border: 1px solid goldenrod;
+    border-radius: 2px;
+    padding: 1rem;
+    columns: 2;
+}
+
+.wordgen-lang li {
+    list-style-position: inside;
+}
+
+.sample-syllable {
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    padding-inline: 0.5rem;
+}
+
+.sample-word .ipa {
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    padding-inline: 0.5rem;
+}
+
+.sample-word .orthography {
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    padding-inline: 0.5rem;
+    font-weight: bold;
+}
