@@ -28,6 +28,10 @@
     }
 }
 
+.word-and-subscript {
+    text-wrap: nowrap;
+}
+
 .word {
     transition: ease 150ms;
     border-radius: 3px;
