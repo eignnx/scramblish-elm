@@ -88,14 +88,6 @@ ruby {
 rt {
     font-style: italic;
 
-    &::before {
-        content: "(";
-    }
-
-    &::after {
-        content: ")";
-    }
-
     &:has(select)::before,
     &:has(select)::after {
         content: ""
