@@ -96,11 +96,26 @@ applyGrammarMut gm =
     }
 
 
-mutateSyntaxTree : GrammarMut -> SyntaxTree -> SyntaxTree
+type WordTranslation a
+    = WordTranslation a
+
+
+type MutatedSyntaxTree
+    = MutLeaf Tm (WordTranslation Tm)
+    | MutNode
+        { nt : Nt
+        , branchIndex : Int
+        , children : List MutatedSyntaxTree
+        }
+
+
+mutateSyntaxTree : GrammarMut -> SyntaxTree -> MutatedSyntaxTree
 mutateSyntaxTree grammarMut oldTree =
     case oldTree of
         Leaf (Tm oldTm) ->
-            Leaf (Tm (Maybe.withDefault "[untranslatable]" (Dict.get oldTm grammarMut.wordMapping)))
+            MutLeaf
+                (Tm (Maybe.withDefault "[untranslatable]" (Dict.get oldTm grammarMut.wordMapping)))
+                (WordTranslation (Tm oldTm))
 
         Node { nt, branchIndex, children } ->
             let
@@ -122,12 +137,12 @@ mutateSyntaxTree grammarMut oldTree =
                                     ++ Debug.toString ruleMuts
                             )
 
-                newChildrenUnpermuted : List SyntaxTree
+                newChildrenUnpermuted : List MutatedSyntaxTree
                 newChildrenUnpermuted =
                     children
                         |> List.map (mutateSyntaxTree grammarMut)
 
-                getPermutationIndex : Int -> SyntaxTree
+                getPermutationIndex : Int -> MutatedSyntaxTree
                 getPermutationIndex index =
                     List.Extra.getAt index newChildrenUnpermuted
                         |> Maybe.Extra.expect
@@ -139,12 +154,22 @@ mutateSyntaxTree grammarMut oldTree =
                                     ++ "`"
                             )
 
-                newChildren : List SyntaxTree
+                newChildren : List MutatedSyntaxTree
                 newChildren =
                     ruleMut.clausePermutation
                         |> List.map getPermutationIndex
             in
-            Node { nt = nt, branchIndex = branchIndex, children = newChildren }
+            MutNode { nt = nt, branchIndex = branchIndex, children = newChildren }
+
+
+syntaxTreeFromMutationSyntaxTree : MutatedSyntaxTree -> SyntaxTree
+syntaxTreeFromMutationSyntaxTree mutTree =
+    case mutTree of
+        MutLeaf (Tm tm) _ ->
+            Leaf (Tm tm)
+
+        MutNode { nt, branchIndex, children } ->
+            Node { nt = nt, branchIndex = branchIndex, children = List.map syntaxTreeFromMutationSyntaxTree children }
 
 
 

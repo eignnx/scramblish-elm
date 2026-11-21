@@ -12,7 +12,7 @@ import List.Extra
 import Logic.Builtins
 import Logic.Solve.Randomized
 import Logic.Types as T
-import Mutation exposing (GrammarMut, mutateSyntaxTree)
+import Mutation exposing (GrammarMut, MutatedSyntaxTree(..), WordTranslation(..), mutateSyntaxTree)
 import Platform.Cmd as Cmd exposing (Cmd)
 import Random
 import Req exposing (..)
@@ -322,6 +322,7 @@ computeWordStats scramblishGrammar sentences =
         scrCounts =
             sentences
                 |> List.map (Mutation.mutateSyntaxTree scramblishGrammar)
+                |> List.map Mutation.syntaxTreeFromMutationSyntaxTree
                 |> WordStats.countWords
     in
     { eng = engCounts, scr = scrCounts }
@@ -528,11 +529,10 @@ sentenceExampleView model incorrectTranslations grammarMut index engTree =
             [ div []
                 [ dt [] [ text "Scramblish:" ]
                 , dd []
-                    [ syntaxTreeView
+                    [ mutatedSyntaxTreeView
                         model
                         incorrectTranslations
                         grammarMut.wordGenerator.orthography.title
-                        Scramblish
                         scrTree
                     ]
                 ]
@@ -569,6 +569,7 @@ syntaxTreeView { answerCheckingMode, wordStats } incorrectTranslations scriptNam
                                         List.map .scr incorrectTranslations
                                 )
                     , wordStats = wordStats
+                    , correctTranslation = Nothing
                     }
                     lang
                     word
@@ -577,15 +578,49 @@ syntaxTreeView { answerCheckingMode, wordStats } incorrectTranslations scriptNam
         |> span [ class "sentence", class ("script-name--" ++ String.join "-" (String.split " " scriptName)) ]
 
 
+{-| Lang is always Scramblish.
+-}
+mutatedSyntaxTreeView : Model -> List { eng : String, scr : String } -> String -> MutatedSyntaxTree -> Html Msg
+mutatedSyntaxTreeView model incorrectTranslations scriptName tree =
+    mutatedSyntaxTreeViewRec model incorrectTranslations scriptName tree
+        |> span [ class "sentence", class ("script-name--" ++ String.join "-" (String.split " " scriptName)) ]
+
+mutatedSyntaxTreeViewRec : Model -> List { eng : String, scr : String } -> String -> MutatedSyntaxTree -> List (Html Msg)
+mutatedSyntaxTreeViewRec model incorrectTranslations scriptName tree =
+    case tree of
+        MutLeaf (Tm tm) (WordTranslation (Tm correctTranslation)) ->
+            viewWord
+                { displayRuby = True
+                , wordIsIncorrectTranslation =
+                    model.answerCheckingMode && List.member tm (List.map .scr incorrectTranslations)
+                , wordStats = model.wordStats
+                , correctTranslation = Just correctTranslation
+                }
+                Scramblish
+                tm
+                |> List.singleton
+
+        MutNode { nt, children } ->
+            children
+                |> List.concatMap
+                    (mutatedSyntaxTreeViewRec
+                        model
+                        incorrectTranslations
+                        scriptName
+                    )
+                |> List.intersperse (span [ class "whitespace" ] [ text " " ])
+
+
 type alias ViewWordProps =
     { displayRuby : Bool
     , wordIsIncorrectTranslation : Bool
     , wordStats : WordStats
+    , correctTranslation : Maybe String
     }
 
 
 viewWord : ViewWordProps -> Lang -> String -> Html Msg
-viewWord { displayRuby, wordStats, wordIsIncorrectTranslation } lang word =
+viewWord { displayRuby, wordStats, wordIsIncorrectTranslation, correctTranslation } lang word =
     let
         count =
             WordStats.getCountForWord wordStats lang word
@@ -737,6 +772,7 @@ viewUserTranslations { wordStats, incorrectTranslations } userTranslations { but
                     , wordStats = wordStats
                     , wordIsIncorrectTranslation =
                         List.member { eng = eng, scr = scr } incorrectTranslations
+                    , correctTranslation = Nothing
                     }
             in
             tr []
