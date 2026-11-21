@@ -410,39 +410,6 @@ view model =
                                 )
                         )
                     ]
-                , details []
-                    (summary [] [ text "Query Tests" ]
-                        :: button [ onClick (RandomSolve (Ask ())) ] [ text "Random Solve Query" ]
-                        :: (case model.querySoln of
-                                Nothing ->
-                                    [ text "No query results yet." ]
-
-                                Just (Ok u) ->
-                                    [ text "Query succeeded: ", viewUSet u ]
-
-                                Just (Err e) ->
-                                    [ text ("Query failed: " ++ Debug.toString e) ]
-                           )
-                    )
-
-                -- [ Logic.solveQuery
-                --     Logic.exDb
-                --     Logic.usetEmpty
-                --     [ Logic.Nt "mortal" [ Logic.Var "X" ] ]
-                --     -- [ Logic.Nt "man" [ Logic.Atom "socrates" ] ]
-                --     -- |> Debug.toString
-                --     -- |> text
-                --     |> List.map
-                --         (\res ->
-                --             case res of
-                --                 Err e ->
-                --                     e |> Debug.toString |> text
-                --                 Ok us ->
-                --                     us |> Logic.viewUSet
-                --         )
-                --     |> List.intersperse (hr [] [])
-                --     |> div [ class "all-solutions" ]
-                -- ]
                 , section [ class "container", class "grammar-container" ]
                     [ renderGrammar en ]
                 , section [ class "container", class "grammar-container" ]
